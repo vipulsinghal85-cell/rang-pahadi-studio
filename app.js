@@ -12,7 +12,7 @@ try { S.lang = localStorage.getItem('rp-lang') === 'hi' ? 'hi' : 'en'; } catch {
 /* ---------------------------------------------------------------- words */
 const I18N = {
   en: {
-    nav_workshops:'Workshops', nav_gallery:'Gallery', nav_gift:'Gift', nav_about:'About us', nav_visit:'Visit', lang_btn:'हिं',
+    nav_workshops:'Workshops', nav_gallery:'Gallery', nav_gift:'Gift', nav_about:'About us', nav_faq:'FAQ', nav_visit:'Visit', lang_btn:'हिं',
     see_all:'See all workshops', about_us:'About us', find_btn:'Find my workshop', parties:'Parties & groups', explore:'Explore', everything:'Everything',
     facts:['Batches of 10–16','All materials included','Take your art home'], next_ws:'Next workshop',
     seats_left:(l,t)=>`${l} of ${t} seats left`, full:'Fully booked', book:'Book a seat', waitlist:'Join waitlist', cancelled:'Cancelled',
@@ -40,7 +40,7 @@ const I18N = {
     err_name:'Please add your name.', err_phone:'Please add a 10-digit mobile number so the studio can reach you.', err_generic:'That didn’t go through. Check your connection and try again, or send it on WhatsApp.',
   },
   hi: {
-    nav_workshops:'कार्यशालाएँ', nav_gallery:'गैलरी', nav_gift:'उपहार', nav_about:'हमारे बारे में', nav_visit:'पता', lang_btn:'EN',
+    nav_workshops:'कार्यशालाएँ', nav_gallery:'गैलरी', nav_gift:'उपहार', nav_about:'हमारे बारे में', nav_faq:'सवाल', nav_visit:'पता', lang_btn:'EN',
     see_all:'सभी कार्यशालाएँ देखें', about_us:'हमारे बारे में', find_btn:'मेरी कार्यशाला खोजें', parties:'पार्टी और ग्रुप', explore:'देखें', everything:'सब',
     facts:['10–16 लोगों के बैच','सारी सामग्री शामिल','अपनी कला घर ले जाएँ'], next_ws:'अगली कार्यशाला',
     seats_left:(l,t)=>`${t} में से ${l} सीटें बाकी`, full:'सभी सीटें भर गईं', book:'सीट बुक करें', waitlist:'प्रतीक्षा सूची में जुड़ें', cancelled:'रद्द',
@@ -282,6 +282,7 @@ function render(){
 
   document.getElementById('app').replaceChildren(...[
     S.demo ? el('div',{class:'demo'},'Sample calendar. Connect your Google Sheet in config.js to show real workshops (see README).') : null,
+    festivalBanner(),
     hero, marquee,
     el('main',{class:'wrap',id:'calendar'},
       notice,
@@ -292,6 +293,7 @@ function render(){
       aipanSection(),
       reviewsSection(),
       giftSection(),
+      faqSection(st),
       aboutSection(st),
       el('div',{class:'split',id:'groups'}, groupsPanel(groupWA), visitPanel(st))
     ),
@@ -300,6 +302,7 @@ function render(){
       S.updated ? el('span',{class:'updated'}, 'Calendar updated '+new Date(S.updated).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})) : null))
   ].filter(Boolean));
   updateStructuredData();
+  waButton();
 }
 
 function seatMeter(w){
@@ -774,6 +777,120 @@ function openEnquiry(){
       err, el('div',{class:'modal-foot'}, el('button',{type:'button',class:'btn btn-ghost',onclick:closeModal},t('close')), send))));
 }
 
+
+/* ===================================================== WhatsApp button */
+function waButton(){
+  let b = document.getElementById('waFloat');
+  const link = waLink(S.lang==='hi' ? `नमस्ते ${studioName()}! मुझे एक कार्यशाला के बारे में पूछना है।` : `Hi ${studioName()}! I have a question about your workshops.`);
+  if (!link) { if (b) b.remove(); return; }
+  if (!b) {
+    b = el('a',{id:'waFloat',class:'wa-float',target:'_blank',rel:'noopener'},
+      el('span',{class:'wa-icon','aria-hidden':'true',html:'<svg viewBox="0 0 32 32" width="28" height="28"><path fill="#fff" d="M16 4C9.4 4 4 9 4 15.2c0 3.2 1.4 6 3.7 8.1L6.6 28l4.9-2.4c1.4.4 2.9.7 4.5.7 6.6 0 12-5 12-11.1S22.6 4 16 4z"/><circle cx="11" cy="15.4" r="1.7" fill="#1fa855"/><circle cx="16" cy="15.4" r="1.7" fill="#1fa855"/><circle cx="21" cy="15.4" r="1.7" fill="#1fa855"/></svg>'}),
+      el('span',{class:'wa-label'}));
+    document.body.append(b);
+  }
+  b.href = link;
+  b.setAttribute('aria-label', S.lang==='hi' ? 'WhatsApp पर पूछें' : 'Ask us on WhatsApp');
+  b.querySelector('.wa-label').textContent = S.lang==='hi' ? 'पूछें' : 'Ask us';
+}
+
+/* ================================================================== FAQ */
+function faqItems(st){
+  const hi = S.lang==='hi';
+  const addr = st.address ? (hi ? `हमारा स्टूडियो ${st.address} पर है।` : `The studio is at ${st.address}.`) : '';
+  const parking = st.parking || (hi ? 'पार्किंग और रास्ते के लिए हमें WhatsApp करें।' : 'Message us on WhatsApp for directions and parking.');
+  const cancel = st.cancelPolicy || (hi
+    ? 'कार्यशाला से 48 घंटे पहले तक आप तारीख मुफ़्त में बदल सकते हैं। उसके बाद पैसे वापस नहीं होते, लेकिन आप अपनी जगह किसी दोस्त को भेज सकते हैं।'
+    : 'You can move to another date for free up to 48 hours before the workshop. After that we can’t refund, but you’re welcome to send a friend in your place.');
+  return hi ? [
+    ['क्या पहले से कला आनी चाहिए?','बिल्कुल नहीं। हर कार्यशाला शुरुआत से होती है और कलाकार हर कदम पर साथ रहती हैं।'],
+    ['कीमत में क्या शामिल है?','सारी सामग्री: रंग, कैनवास, मोम, ब्रश, एप्रन। आप अपनी बनाई चीज़ घर ले जाते हैं।'],
+    ['क्या पहनकर आएँ?','आरामदायक कपड़े जिन पर थोड़ा रंग लग जाए तो चिंता न हो। एप्रन हम देते हैं।'],
+    ['बच्चे किस उम्र से आ सकते हैं?','बच्चों का आर्ट क्लब 6–12 साल के लिए है। ज़्यादातर बड़ों की कार्यशालाएँ 12–14 साल से ऊपर के लिए हैं; छोटे बच्चे किसी बड़े के साथ आ सकते हैं।'],
+    ['भुगतान कैसे करें?','बुकिंग के बाद UPI QR कोड दिखता है। भुगतान करते ही आपकी सीट पक्की हो जाती है।'],
+    ['क्या बुकिंग रद्द या बदल सकते हैं?', cancel],
+    ['स्टूडियो कहाँ है? पार्किंग है?', `${addr} ${parking}`.trim()],
+    ['ग्रुप या पार्टी के लिए?','हाँ! जन्मदिन, किटी पार्टी, स्कूल और ऑफ़िस टीम के लिए 8 लोगों से निजी सत्र रखते हैं। नीचे “पूछताछ भेजें” दबाइए।'],
+    ['कलाकृति कब घर ले जा सकते हैं?','ज़्यादातर चीज़ें उसी दिन। टेक्सचर आर्ट को सूखने में एक दिन लग सकता है; हम बता देंगे।'],
+  ] : [
+    ['Do I need any art experience?','Not at all. Every workshop starts from the basics, and the artist guides you step by step.'],
+    ['What’s included in the price?','All materials: paints, canvas, wax, brushes and aprons. You take home what you make.'],
+    ['What should I wear?','Comfortable clothes you don’t mind getting a little paint or wax on. We provide aprons.'],
+    ['How old do kids need to be?','The Kids’ Art Club is for ages 6–12. Most adult workshops are for ages 12–14 and up; younger children can join with an adult.'],
+    ['How do I pay?','After you book, you’ll see a UPI QR code with the exact amount. Your seat is confirmed once the payment comes through.'],
+    ['Can I cancel or change my date?', cancel],
+    ['Where is the studio? Is there parking?', `${addr} ${parking}`.trim()],
+    ['Can I book for a group or party?','Yes! We run private sessions for birthdays, kitty parties, schools and office teams, from 8 people. Use “Send an enquiry” below.'],
+    ['When can I take my artwork home?','Most pieces go home the same day. Texture art can need a day to dry; we’ll let you know.'],
+  ];
+}
+function faqSection(st){
+  return el('section',{class:'block faq',id:'faq'},
+    el('div',{class:'block-head'}, el('div',null, el('h2',null, S.lang==='hi'?'अक्सर पूछे जाने वाले सवाल':'Questions people ask'),
+      el('p',{class:'desc'}, S.lang==='hi'?'जवाब नहीं मिला? WhatsApp पर पूछिए।':'Didn’t find your answer? Ask us on WhatsApp.'))),
+    el('div',{class:'faq-list'}, faqItems(st).map(([q,a],i) => el('details',{class:'faq-item',open:i===0},
+      el('summary',null, el('span',null,q), el('span',{class:'faq-plus','aria-hidden':'true'},'+')), el('p',null,a)))));
+}
+
+/* ====================================================== festival banner */
+// Dates checked for 2026–27. Add new years here (or ask Claude) when they come up.
+const FESTIVALS = [
+  {key:'diwali', date:'2026-11-08', before:21, after:1, deco:'diya', bg:'#1f1633', accent:'#f2b544',
+   en:{eyebrow:'Diwali special', title:'Diwali Diya & Candle Workshop', sub:'Paint your own diyas and pour scented candles to light up your home this Diwali.', cta:'Book your Diwali workshop'},
+   hi:{eyebrow:'दिवाली विशेष', title:'दिवाली दीया और मोमबत्ती कार्यशाला', sub:'इस दिवाली अपने हाथों से दीये रंगिए और खुशबूदार मोमबत्तियाँ बनाइए।', cta:'दिवाली कार्यशाला बुक करें'},
+   match:/diya|diwali|candle/i, cat:'Candle making'},
+  {key:'christmas', date:'2026-12-25', before:24, after:1, deco:'star', bg:'#173528', accent:'#e8c46a',
+   en:{eyebrow:'Christmas special', title:'Christmas Candles & Gifts', sub:'Make candles and hand-painted gifts, or give someone a workshop voucher.', cta:'See Christmas workshops'},
+   hi:{eyebrow:'क्रिसमस विशेष', title:'क्रिसमस मोमबत्तियाँ और उपहार', sub:'मोमबत्तियाँ और हाथ से रंगे उपहार बनाइए, या किसी को वर्कशॉप वाउचर दीजिए।', cta:'क्रिसमस कार्यशालाएँ देखें'},
+   match:/christmas|xmas|candle/i, cat:'Candle making', gift:true},
+  {key:'holi', date:'2027-03-22', before:21, after:1, deco:'gulal', bg:'#3b1e4d', accent:'#ffd23f',
+   en:{eyebrow:'Holi special', title:'Holi Colour Splash Painting', sub:'Celebrate the festival of colours with a bright, messy, joyful painting session.', cta:'Book a Holi session'},
+   hi:{eyebrow:'होली विशेष', title:'होली रंग-बिरंगी पेंटिंग', sub:'रंगों के त्योहार को एक चटक, मज़ेदार पेंटिंग सत्र के साथ मनाइए।', cta:'होली सत्र बुक करें'},
+   match:/holi|colour|color/i, cat:'Painting & drawing'},
+  {key:'rakhi', date:'2027-08-17', before:21, after:1, deco:'rakhi', bg:'#4a1d2c', accent:'#f0a8c0',
+   en:{eyebrow:'Raksha Bandhan special', title:'Make a Rakhi, Gift an Experience', sub:'Craft a handmade rakhi together, or gift your sibling an art workshop voucher.', cta:'Gift a workshop'},
+   hi:{eyebrow:'रक्षाबंधन विशेष', title:'राखी बनाइए, अनुभव उपहार में दीजिए', sub:'साथ मिलकर हाथ से राखी बनाइए, या भाई-बहन को कला कार्यशाला का वाउचर दीजिए।', cta:'वर्कशॉप उपहार दें'},
+   match:/rakhi|raksha/i, cat:'Handicrafts', gift:true},
+];
+function activeFestival(){
+  const force = new URLSearchParams(location.search).get('festival');
+  if (force) return FESTIVALS.find(f => f.key===force) || null;
+  const today = parseD(todayISO());
+  return FESTIVALS.find(f => { const d = parseD(f.date), diff = Math.round((d - today)/864e5); return diff <= f.before && diff >= -f.after; }) || null;
+}
+function festivalDeco(kind){
+  if (kind==='diya') return Array.from({length:5},(_,i)=>`<g class="diya" style="--d:${(i*0.37).toFixed(2)}s" transform="translate(${40+i*90} 0)">
+      <ellipse class="glow" cx="30" cy="34" rx="34" ry="34" fill="url(#fglow)"/>
+      <path class="flame" d="M30 14 C38 26 38 34 30 42 C22 34 22 26 30 14Z" fill="#ffcf5a"/><path d="M30 26 C34 32 34 36 30 41 C26 36 26 32 30 26Z" fill="#fff3c4"/>
+      <path d="M2 46 Q30 72 58 46 Z" fill="#c4582b"/><path d="M2 46 Q30 52 58 46" fill="none" stroke="#f2b544" stroke-width="2.5"/>
+      <circle cx="16" cy="54" r="2.5" fill="#f2b544"/><circle cx="30" cy="58" r="2.5" fill="#f2b544"/><circle cx="44" cy="54" r="2.5" fill="#f2b544"/></g>`).join('');
+  if (kind==='gulal') { const c=['#ff4f8b','#ffd23f','#3ec7e0','#7cdb5a','#ff8a3d','#b46cff']; let s=''; for (let i=0;i<16;i++){ const x=20+((i*73)%440), y=10+((i*37)%60), r=8+((i*13)%16); s+=`<circle class="puff" style="--d:${(i*.2).toFixed(1)}s" cx="${x}" cy="${y}" r="${r}" fill="${c[i%6]}" opacity=".85"/>`; } return s; }
+  if (kind==='rakhi') return `<path d="M0 40 C120 20 340 60 480 38" stroke="#f0a8c0" stroke-width="5" fill="none"/>${[0,1,2,3,4,5,6,7].map(k=>`<ellipse cx="${240+28*Math.cos(k*Math.PI/4)}" cy="${40+28*Math.sin(k*Math.PI/4)}" rx="16" ry="9" transform="rotate(${k*45} ${240+28*Math.cos(k*Math.PI/4)} ${40+28*Math.sin(k*Math.PI/4)})" fill="#ffcf5a"/>`).join('')}<circle cx="240" cy="40" r="17" fill="#e2445c"/><circle cx="240" cy="40" r="7" fill="#fff3c4"/>`;
+  if (kind==='star') { let s=''; for (let i=0;i<14;i++){ const x=20+((i*71)%450), y=8+((i*29)%64), r=3+(i%3)*2; s+=`<path class="twinkle" style="--d:${(i*.27).toFixed(2)}s" transform="translate(${x} ${y}) scale(${r/6})" d="M0 -6 L1.6 -1.6 L6 0 L1.6 1.6 L0 6 L-1.6 1.6 L-6 0 L-1.6 -1.6Z" fill="#fff6d8"/>`; } return s; }
+  return '';
+}
+function festivalBanner(){
+  const f = activeFestival(); if (!f) return null;
+  try { if (sessionStorage.getItem('rp-fest-hide')===f.key) return null; } catch {}
+  const w = (S.lang==='hi' ? f.hi : f.en), days = Math.round((parseD(f.date) - parseD(todayISO()))/864e5);
+  const pick = upcoming().find(x => f.match.test(x.title) && seatsLeft(x)>0) || upcoming().find(x => x.category===f.cat && seatsLeft(x)>0);
+  const go = () => {
+    if (pick) return openBooking(pick);
+    if (f.gift) { document.getElementById('gift')?.scrollIntoView({behavior:'smooth'}); return; }
+    const l = waLink(`Hi ${studioName()}! I'm interested in your ${f.en.title}. When is the next one?`); if (l) window.open(l,'_blank','noopener');
+  };
+  const when = days > 1 ? (S.lang==='hi' ? `${days} दिन बाकी` : `${days} days to go`) : days === 1 ? (S.lang==='hi' ? 'कल है!' : 'Tomorrow!') : days === 0 ? (S.lang==='hi' ? 'आज है!' : 'Today!') : '';
+  return el('section',{class:'festival fest-'+f.key, style:`--fbg:${f.bg};--facc:${f.accent}`, 'aria-label':w.eyebrow},
+    el('div',{class:'wrap fest-inner'},
+      el('div',{class:'fest-text'},
+        el('div',{class:'fest-eyebrow'}, w.eyebrow, when ? el('span',{class:'fest-when'}, when) : null),
+        el('h2',null, w.title), el('p',null, w.sub)),
+      el('div',{class:'fest-deco','aria-hidden':'true',html:`<svg viewBox="0 0 480 80" preserveAspectRatio="xMidYMid meet"><defs><radialGradient id="fglow"><stop offset="0" stop-color="#ffcf5a" stop-opacity=".55"/><stop offset="1" stop-color="#ffcf5a" stop-opacity="0"/></radialGradient></defs>${festivalDeco(f.deco)}</svg>`}),
+      el('div',{class:'fest-actions'},
+        el('button',{type:'button',class:'btn fest-cta',onclick:go}, pick ? w.cta : (f.gift ? (S.lang==='hi'?'वाउचर देखें':'See gift vouchers') : t('ask_wa'))),
+        el('button',{type:'button',class:'fest-close','aria-label':'Hide',onclick:()=>{ try { sessionStorage.setItem('rp-fest-hide', f.key); } catch {} render(); }},'×'))));
+}
+
 /* ======================================================= Google events */
 let lastLD = '';
 function updateStructuredData(){
@@ -790,6 +907,7 @@ function updateStructuredData(){
   });
   const data = [{'@context':'https://schema.org','@type':'LocalBusiness', name:studioName(), image:logo, url:base, address:place.address, telephone:waNumber() ? '+'+waNumber() : undefined},
                 ...events.map(e => ({'@context':'https://schema.org', ...e}))];
+  data.push({'@context':'https://schema.org','@type':'FAQPage', mainEntity: faqItems(st).map(([q,a]) => ({'@type':'Question', name:q, acceptedAnswer:{'@type':'Answer', text:a}}))});
   const json = JSON.stringify(data);
   if (json === lastLD) return; lastLD = json;
   let tag = document.getElementById('ld-events');
