@@ -4,7 +4,7 @@
 const CFG = window.STUDIO_CONFIG || {};
 const API = String(CFG.SHEET_API_URL || '').trim();
 const CACHE_KEY = 'rp-studio-cache-v2';
-const CATS = ['Traditional Indian art','Painting & drawing','Mixed media & texture','Pottery & crafts','Handicrafts','Kids'];
+const CATS = ['Traditional Indian art','Painting & drawing','Mixed media & texture','Candle making','Handicrafts','Kids'];
 
 const S = { settings:{}, workshops:[], gallery:[], reviews:[], loaded:false, error:false, demo:!API, cat:'All', updated:null, lang:'en' };
 try { S.lang = localStorage.getItem('rp-lang') === 'hi' ? 'hi' : 'en'; } catch {}
@@ -28,7 +28,7 @@ const I18N = {
     voucher:'Gift voucher', voucher_d:'Any amount, good for any workshop. You get a voucher card ready to send.',
     pass:'Workshop pass', pass_d:(p,v)=>`Pay ${p}, get ${v} to spend on any workshops. Best value for regulars.`, buy:'Buy now', from:'from',
     about_eyebrow:'About us', about_h:['A studio rooted in the ','hills',', open to everyone'],
-    pillars:[['Rooted in Uttarakhand','Aipan, Ringaal and pahadi colours sit beside modern mixed media.'],['No experience needed','Every session starts from the basics. You leave with a finished piece.'],['Small batches','10–16 people, so the artist can guide every student.']],
+    pillars:[['Rooted in Uttarakhand','Aipan and pahadi colours sit beside modern mixed media.'],['No experience needed','Every session starts from the basics. You leave with a finished piece.'],['Small batches','10–16 people, so the artist can guide every student.']],
     meet:'Meet the artist',
     groups_h:'Parties & groups', groups_d:'Birthdays, kitty parties, bachelorettes, school visits and team offsites. Private sessions at the studio or at your venue, from 8 people.', enquire:'Send an enquiry', ask_wa:'Ask on WhatsApp',
     visit_h:'Visit & pay', visit_d:'Book a seat here, then pay by UPI to confirm it. All materials are included in the price.', studio:'Studio', hours:'Hours', email:'Email', upi:'UPI ID', directions:'Get directions',
@@ -56,7 +56,7 @@ const I18N = {
     voucher:'गिफ़्ट वाउचर', voucher_d:'कोई भी राशि, किसी भी कार्यशाला के लिए। भेजने के लिए तैयार वाउचर कार्ड मिलेगा।',
     pass:'वर्कशॉप पास', pass_d:(p,v)=>`${p} दीजिए, ${v} की कार्यशालाएँ कीजिए। नियमित आने वालों के लिए सबसे अच्छा।`, buy:'अभी खरीदें', from:'शुरू',
     about_eyebrow:'हमारे बारे में', about_h:['पहाड़ों की ','गोद',' में, सबके लिए खुला स्टूडियो'],
-    pillars:[['उत्तराखंड से जुड़ा','ऐपण, रिंगाल और पहाड़ी रंग, आधुनिक मिक्स्ड मीडिया के साथ।'],['अनुभव ज़रूरी नहीं','हर सत्र शुरुआत से। आप पूरी कलाकृति लेकर जाते हैं।'],['छोटे बैच','10–16 लोग, ताकि कलाकार हर किसी को सिखा सके।']],
+    pillars:[['उत्तराखंड से जुड़ा','ऐपण और पहाड़ी रंग, आधुनिक मिक्स्ड मीडिया के साथ।'],['अनुभव ज़रूरी नहीं','हर सत्र शुरुआत से। आप पूरी कलाकृति लेकर जाते हैं।'],['छोटे बैच','10–16 लोग, ताकि कलाकार हर किसी को सिखा सके।']],
     meet:'कलाकार से मिलिए',
     groups_h:'पार्टी और ग्रुप', groups_d:'जन्मदिन, किटी पार्टी, स्कूल विज़िट और ऑफ़िस टीम। स्टूडियो में या आपकी जगह पर, 8 लोगों से।', enquire:'पूछताछ भेजें', ask_wa:'WhatsApp पर पूछें',
     visit_h:'पता और भुगतान', visit_d:'यहाँ सीट बुक करें, फिर UPI से भुगतान करके पक्का करें। सारी सामग्री कीमत में शामिल है।', studio:'स्टूडियो', hours:'समय', email:'ईमेल', upi:'UPI ID', directions:'रास्ता देखें',
@@ -69,7 +69,7 @@ const I18N = {
   }
 };
 const t = (k, ...a) => { const v = (I18N[S.lang] && I18N[S.lang][k] !== undefined) ? I18N[S.lang][k] : I18N.en[k]; return typeof v === 'function' ? v(...a) : v; };
-const CAT_HI = {'Traditional Indian art':'पारंपरिक भारतीय कला','Painting & drawing':'चित्रकला','Mixed media & texture':'मिक्स्ड मीडिया और टेक्सचर','Pottery & crafts':'मिट्टी के बर्तन','Handicrafts':'हस्तशिल्प','Kids':'बच्चे'};
+const CAT_HI = {'Traditional Indian art':'पारंपरिक भारतीय कला','Painting & drawing':'चित्रकला','Mixed media & texture':'मिक्स्ड मीडिया और टेक्सचर','Candle making':'मोमबत्ती बनाना','Handicrafts':'हस्तशिल्प','Kids':'बच्चे'};
 const catName = c => S.lang === 'hi' ? (CAT_HI[c] || c) : c;
 const wTitle = w => (S.lang === 'hi' && w.titleHi) ? w.titleHi : w.title;
 const wDesc = w => (S.lang === 'hi' && w.descriptionHi) ? w.descriptionHi : w.description;
@@ -82,9 +82,9 @@ function sampleData(){
   const w = (id,title,category,n,start,durationMins,seats,price,unit,level,description,booked) => ({id,title,category,date:day(n),start,durationMins,seats,price,unit,level,description,status:'open',booked,photo:''});
   return {
     settings:{ name:'Rang Pahadi Studio', city:'Dehradun · Uttarakhand', hours:'Tue–Sun, 10 AM–7 PM', whatsapp:CFG.WHATSAPP||'', voucherAmounts:'1000,1500,2000,3000', passPrice:'5000', passValue:'6000', upiName:'Rang Pahadi Studio',
-      tagline:"Hands-on art workshops in the Doon valley: Aipan, Madhubani, texture art, pottery, handicrafts and kids' classes. All materials included.",
-      taglineHi:'दून घाटी में हाथों से कला सीखिए: ऐपण, मधुबनी, टेक्सचर आर्ट, मिट्टी के बर्तन, हस्तशिल्प और बच्चों की कक्षाएँ। सारी सामग्री शामिल।',
-      about:"Rang Pahadi Studio is a hands-on art studio in Dehradun, started by an artist who grew up with the colours of the hills. Many people say they \"can't draw\". The studio is here to prove them wrong, one afternoon at a time.\n\nWe teach the folk art of Uttarakhand and India, like Aipan, Madhubani and mandala, alongside texture art, mixed media, pottery and handicrafts. Every workshop is guided step by step, all materials are included, and you take home something you made yourself.",
+      tagline:"Hands-on art workshops in the Doon valley: Aipan, painting, texture art, candle making, block printing and kids' classes. All materials included.",
+      taglineHi:'दून घाटी में हाथों से कला सीखिए: ऐपण, पेंटिंग, टेक्सचर आर्ट, मोमबत्ती बनाना, ठप्पा छपाई और बच्चों की कक्षाएँ। सारी सामग्री शामिल।',
+      about:"Rang Pahadi Studio is a hands-on art studio in Dehradun, started by an artist who grew up with the colours of the hills. Many people say they \"can't draw\". The studio is here to prove them wrong, one afternoon at a time.\n\nWe teach the folk art of Uttarakhand and India, like Aipan, alongside painting, texture art, mixed media, candle making and block printing. Every workshop is guided step by step, all materials are included, and you take home something you made yourself.",
       artistName:'Akanksha Singhal', artistRole:'Founder & lead artist',
       artistBio:'Akanksha Singhal is a Dehradun-based artist working across painting, mixed media, texture art and traditional Indian folk forms. She started Rang Pahadi Studio to share the joy of making art with anyone who walks in, from first-timers to practising artists.',
       artistQuote:'Everyone can make art. Most people just need a table, good materials and an afternoon.' },
@@ -92,8 +92,8 @@ function sampleData(){
       w('s1','Aipan Art (Kumaoni folk)','Traditional Indian art',5,'11:00',150,12,1200,'per person','Beginner · Ages 14+','Learn the geru-and-rice-paste patterns of Kumaon and paint your own Aipan plate.',4),
       w('s2','Texture Art on Canvas','Mixed media & texture',6,'11:00',180,12,1800,'per person','Beginner','Build raised floral textures with modelling paste and palette knives on a 12×12 canvas.',9),
       w('s3','Acrylic Paint & Sip','Painting & drawing',6,'17:00',150,16,1500,'per person','No experience needed','A guided Mussoorie sunset painting with mocktails. Good for friends and date nights.',6),
-      w('s4',"Kids' Art Club (4 Saturdays)",'Kids',12,'10:00',90,15,3000,'per child / month','Ages 6–12','Drawing, colour, clay and craft every Saturday. Screen-free and messy.',3),
-      w('s5','Pottery: Hand-building','Pottery & crafts',13,'11:00',180,10,2000,'per person','Beginner · Ages 14+','Pinch and coil a bowl and a planter. Pieces are fired and ready to collect in 2 weeks.',10),
+      w('s4',"Kids' Art Club (4 Saturdays)",'Kids',12,'10:00',90,15,3000,'per child / month','Ages 6–12','Drawing, colour and craft every Saturday. Screen-free and messy.',3),
+      w('s5','Candle Making: Scented Soy Candles','Candle making',13,'11:00',150,12,1500,'per person','Beginner · Ages 12+','Pour two scented soy candles in glass jars and decorate a pillar candle to take home.',10),
       w('s6','Block Printing on Tote','Handicrafts',19,'11:00',150,12,1500,'per person','All levels','Hand-block print a cotton tote with traditional wooden blocks and fabric colours.',2),
     ], gallery:[], reviews:[]
   };
@@ -132,6 +132,7 @@ function waNumber(){ const n = digits(S.settings.whatsapp || CFG.WHATSAPP); if(!
 function waLink(text){ const n = waNumber(); return n ? 'https://wa.me/'+n+'?text='+encodeURIComponent(text) : null; }
 const seatsLeft = w => Math.max(0, (Number(w.seats)||0) - (Number(w.booked)||0));
 const upcoming = () => S.workshops.filter(w => w.date >= todayISO()).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
+const voucherList = () => { const a = String(S.settings.voucherAmounts||'').split(/[\s,;\/|]+/).map(Number).filter(n => n >= 100 && n <= 100000); return a.length ? a : [1000,1500,2000,3000]; };
 const siteUrl = () => S.settings.siteUrl || (location.origin + location.pathname);
 function copyChip(text){
   const b = el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:e=>copyText(text,e.currentTarget)},t('copy'));
@@ -167,7 +168,7 @@ const THEMES = {
   'Traditional Indian art': {band:'#9b3a22', motif:'aipan',   sub:'folk art of Kumaon and beyond',      subHi:'कुमाऊँ और देश की लोक कला', deva:'लोक कला'},
   'Painting & drawing':     {band:'#2b4a7a', motif:'brush',   sub:'paint the light of the Doon valley',  subHi:'दून घाटी की रोशनी रंगिए', deva:'चित्रकला'},
   'Mixed media & texture':  {band:'#86561a', motif:'texture', sub:'layers, textures and found things',   subHi:'परतें, बनावट और नए प्रयोग', deva:'मिश्रित कला'},
-  'Pottery & crafts':       {band:'#7a4430', motif:'wheel',   sub:'clay, hands and a slow wheel',        subHi:'मिट्टी, हाथ और धीमा चाक', deva:'मिट्टी'},
+  'Candle making':          {band:'#4e3a63', motif:'flame',   sub:'wax, scent and a warm glow',          subHi:'मोम, खुशबू और गर्म रोशनी', deva:'मोमबत्ती'},
   'Handicrafts':            {band:'#2c5a50', motif:'block',   sub:'block prints, knots and bamboo',      subHi:'ठप्पा छपाई, गाँठें और बाँस', deva:'हस्तशिल्प'},
   'Kids':                   {band:'#8a2d60', motif:'kids',    sub:'messy, bright and screen-free',       subHi:'रंग-बिरंगा, मज़ेदार, स्क्रीन से दूर', deva:'बच्चों की कला'},
   default:                  {band:'#9b3a22', motif:'aipan',   sub:'art workshops from the hills',        subHi:'पहाड़ों से कला कार्यशालाएँ', deva:'रंग पहाड़ी'},
@@ -208,6 +209,14 @@ const MOTIFS = {
     let s=''; const buti=(x,y)=>{ let p=''; for(let k=0;k<4;k++){ const a=k*Math.PI/2, ex=(x+11*Math.cos(a)).toFixed(1), ey=(y+11*Math.sin(a)).toFixed(1); p+=`<ellipse cx="${ex}" cy="${ey}" rx="9" ry="5" transform="rotate(${k*90} ${ex} ${ey})"/>`; } return p+`<circle cx="${x}" cy="${y}" r="3.5" fill="currentColor" stroke="none"/>`; };
     for (let y=30;y<600;y+=60) for (let x=30;x<600;x+=60){ s+=buti(x,y); s+=`<circle cx="${x+30}" cy="${y+30}" r="2.5" fill="currentColor" stroke="none"/>`; }
     return wrapSVG(`<g clip-path="url(#mclip)" stroke-width="2">${s}</g><circle cx="300" cy="300" r="290"/><circle cx="300" cy="300" r="276" stroke-dasharray="2 10"/>`);
+  },
+  flame(){ // candle making: a flame with glow rings and small flames around
+    const fl=(x,y,k,rot)=>`<path transform="translate(${x} ${y}) rotate(${rot}) scale(${k})" d="M0 -40 C18 -16 24 2 0 30 C-24 2 -18 -16 0 -40Z"/><path transform="translate(${x} ${y}) rotate(${rot}) scale(${k})" d="M0 -6 C8 6 8 14 0 22 C-8 14 -8 6 0 -6Z" fill="currentColor" stroke="none"/>`;
+    let s=fl(300,290,3.2,0);
+    [190,236,290].forEach((r,i)=>{ s+=`<circle cx="300" cy="300" r="${r}" stroke-dasharray="${i===1?'3 12':'none'}"/>`; });
+    for (let i=0;i<12;i++){ const a=i/12*Math.PI*2-Math.PI/2; s+=fl((300+262*Math.cos(a)).toFixed(1),(300+262*Math.sin(a)).toFixed(1),.55,i*30); }
+    for (let i=0;i<24;i++){ const a=(i+.5)/24*Math.PI*2; s+=`<circle cx="${(300+212*Math.cos(a)).toFixed(1)}" cy="${(300+212*Math.sin(a)).toFixed(1)}" r="3" fill="currentColor" stroke="none"/>`; }
+    return wrapSVG(s+'<rect x="262" y="392" width="76" height="110" rx="8"/><line x1="262" y1="420" x2="338" y2="420"/>');
   },
   kids(){
     let s='', seed=7; const rnd=()=>{ seed=(seed*9301+49297)%233280; return seed/233280; };
@@ -258,7 +267,7 @@ function render(){
     )
   ), el('div',{class:'band-edge','aria-hidden':'true'}));
 
-  const crafts = S.lang==='hi' ? ['ऐपण','मधुबनी','टेक्सचर आर्ट','मिट्टी के बर्तन','ठप्पा छपाई','मंडला','वॉटरकलर','मैक्रेमे','रिंगाल','बच्चों का क्लब'] : ['Aipan','Madhubani','Texture art','Pottery','Block printing','Mandala','Watercolour','Macramé','Ringaal craft','Kids’ art club'];
+  const crafts = S.lang==='hi' ? ['ऐपण','पेंटिंग','टेक्सचर आर्ट','मोमबत्ती बनाना','ठप्पा छपाई','वॉटरकलर','पेंट एंड सिप','बच्चों का क्लब'] : ['Aipan','Painting','Texture art','Candle making','Block printing','Watercolour','Paint & sip','Kids’ art club'];
   const marquee = el('div',{class:'marquee','aria-label':crafts.join(', ')}, el('div',{class:'track','aria-hidden':'true'}, [...crafts,...crafts].map(c => el('span',null,c))));
 
   const list = upcoming().filter(w => S.cat==='All' || w.category===S.cat);
@@ -367,7 +376,7 @@ function reviewsSection(){
 /* -------------------------------------------------------------- gifts */
 function giftSection(){
   const st = S.settings;
-  const amounts = String(st.voucherAmounts||'1000,1500,2000,3000').split(',').map(x=>Number(x.trim())).filter(Boolean);
+  const amounts = voucherList();
   const pp = Number(st.passPrice)||5000, pv = Number(st.passValue)||6000;
   return el('section',{class:'block gifts',id:'gift'},
     el('div',{class:'block-head'}, el('div',null, el('h2',null,t('gift_h')), el('p',{class:'desc'},t('gift_sub')))),
@@ -627,7 +636,7 @@ function openQuiz(){
   const ans = {};
   const Q = [
     {k:'who', q:S.lang==='hi'?'कौन आ रहा है?':'Who’s coming?', o:[['me',S.lang==='hi'?'सिर्फ़ मैं':'Just me'],['friends',S.lang==='hi'?'दोस्तों या साथी के साथ':'Me with friends or my partner'],['kid',S.lang==='hi'?'मेरा बच्चा (6–12 साल)':'My child (ages 6–12)'],['group',S.lang==='hi'?'एक ग्रुप, पार्टी या टीम':'A group, party or team']]},
-    {k:'what', q:S.lang==='hi'?'क्या सबसे मज़ेदार लगता है?':'What sounds most fun?', o:[['Traditional Indian art',S.lang==='hi'?'पारंपरिक लोक डिज़ाइन':'Traditional folk patterns'],['Painting & drawing',S.lang==='hi'?'रंग और पेंटिंग':'Painting with colour'],['Pottery & crafts',S.lang==='hi'?'मिट्टी से हाथ गंदे करना':'Getting my hands in clay'],['Handicrafts',S.lang==='hi'?'कुछ काम की चीज़ बनाना':'Making something useful (bags, decor)'],['Mixed media & texture',S.lang==='hi'?'बनावट और प्रयोग':'Textures and experiments']]},
+    {k:'what', q:S.lang==='hi'?'क्या सबसे मज़ेदार लगता है?':'What sounds most fun?', o:[['Traditional Indian art',S.lang==='hi'?'पारंपरिक लोक डिज़ाइन':'Traditional folk patterns'],['Painting & drawing',S.lang==='hi'?'रंग और पेंटिंग':'Painting with colour'],['Candle making',S.lang==='hi'?'खुशबूदार मोमबत्तियाँ बनाना':'Making scented candles'],['Handicrafts',S.lang==='hi'?'कुछ काम की चीज़ बनाना':'Making something useful (bags, decor)'],['Mixed media & texture',S.lang==='hi'?'बनावट और प्रयोग':'Textures and experiments']]},
     {k:'exp', q:S.lang==='hi'?'कितना अनुभव है?':'How much experience do you have?', o:[['none',S.lang==='hi'?'बिल्कुल नहीं':'None at all'],['some',S.lang==='hi'?'थोड़ा बहुत':'A little'],['lots',S.lang==='hi'?'मैं पहले से बनाता/बनाती हूँ':'I already make art']]},
   ];
   const body = el('div');
@@ -661,7 +670,7 @@ function openQuiz(){
 /* ---- gift voucher & pass */
 function openGift(kind){
   const st = S.settings, c = loadContact();
-  const amounts = String(st.voucherAmounts||'1000,1500,2000,3000').split(',').map(x=>Number(x.trim())).filter(Boolean);
+  const amounts = voucherList();
   const pp = Number(st.passPrice)||5000, pv = Number(st.passValue)||6000;
   let amount = amounts[1] || amounts[0];
   const amtBtns = el('div',{class:'chips',style:'margin:0'}, amounts.map(a => { const b = el('button',{type:'button',class:'chip','aria-pressed':a===amount,onclick:()=>{ amount=a; amtBtns.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); }}, inr(a)); return b; }));
