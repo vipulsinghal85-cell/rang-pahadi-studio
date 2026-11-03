@@ -389,7 +389,7 @@ function artworkSection(){
     el('div',null,
       el('div',{class:'eyebrow',style:'color:var(--geru);opacity:1'}, S.lang==='hi'?'गैलरी':'Gallery'),
       el('h2',null, artist ? (S.lang==='hi' ? `${artist} की कलाकृतियाँ` : `Artwork by ${artist}`) : (S.lang==='hi'?'हमारी कलाकृतियाँ':'Our artwork')),
-      el('p',{class:'desc'}, S.lang==='hi'?'मूल पेंटिंग, ऐपण और टेक्सचर आर्ट। किसी भी तस्वीर पर टैप करके बड़ा देखें या खरीदने के लिए पूछें।':'Original paintings, Aipan and texture art. Tap any piece to see it large or ask about buying it.')),
+      el('p',{class:'desc'}, S.lang==='hi'?'पेंटिंग, ऐपण, कैंडल और हस्तनिर्मित कृतियाँ। किसी भी तस्वीर पर टैप करके बड़ा देखें या खरीदने के लिए पूछें।':'Paintings, Aipan, candles and handmade pieces. Tap any piece to see it large or ask about buying it.')),
     ig ? el('a',{class:'btn btn-ghost ig-btn',href:ig,target:'_blank',rel:'noopener'}, igIcon(), ' ', igHandle()) : null);
   if (!S.artworks.length) return el('section',{class:'block',id:'artwork'}, head,
     el('a',{class:'ig-strip',href:ig,target:'_blank',rel:'noopener'}, igIcon(), el('span',null, S.lang==='hi'?'नई कलाकृतियाँ और कार्यशालाओं की झलक Instagram पर देखें':'See the latest artwork and workshop moments on Instagram'), el('b',null,'→')));
