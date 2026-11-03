@@ -143,3 +143,12 @@ Version 2 adds:
 | **Hindi** | The हिं button switches the site to Hindi. For workshop names, fill in **Title (Hindi)** and **Description (Hindi)** in Workshops. |
 | **Google search events** | Your upcoming workshops are described to Google automatically, so they can show up in Google's event results. Check one at search.google.com/test/rich-results. |
 | **Try Aipan & quiz** | These work on their own. Nothing to set up. |
+
+---
+
+## Artwork gallery & Instagram (version 4)
+
+- **Settings → instagram:** your handle, like `rangpahadi`, or your profile link. A "Follow on Instagram" button then shows in the gallery, the artist card and the footer.
+- **Settings → artworkFolderId:** the link of a Google Drive folder with Akanksha's own artwork. The newest 24 images show in the "Artwork by …" gallery.
+- **Captions:** in Drive, right-click a photo → **File information → Details → Description**. Write it like `Monsoon Aipan · Acrylic on canvas · ₹4,500`. Put `Sold` instead of a price for pieces already sold. Without a description, the file name is used.
+- Visitors can tap any piece to see it large, and tap **Ask to buy** to send you a WhatsApp message about that piece.

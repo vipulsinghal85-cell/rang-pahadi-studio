@@ -21,9 +21,11 @@ const HEAD = {
   Reviews: ['Created', 'Name', 'Workshop', 'Rating', 'Review', 'Show on website'],
   Enquiries: ['Created', 'Name', 'Phone', 'Email', 'Organisation', 'Type', 'People', 'Preferred date', 'Message', 'Handled'],
 };
-const CATEGORIES = ['Traditional Indian art', 'Painting & drawing', 'Mixed media & texture', 'Pottery & crafts', 'Handicrafts', 'Kids'];
+const CATEGORIES = ['Traditional Indian art', 'Painting & drawing', 'Mixed media & texture', 'Candle making', 'Handicrafts', 'Kids'];
+const NEW_TAGLINE = "Hands-on art workshops in the Doon valley: Aipan, painting, texture art, candle making, block printing and kids' classes. All materials included.";
+const NEW_TAGLINE_HI = 'दून घाटी में हाथों से कला सीखिए: ऐपण, पेंटिंग, टेक्सचर आर्ट, मोमबत्ती बनाना, ठप्पा छपाई और बच्चों की कक्षाएँ। सारी सामग्री शामिल।';
 const PUBLIC_SETTINGS = ['name', 'tagline', 'taglineHi', 'city', 'address', 'hours', 'whatsapp', 'upi', 'upiName', 'email', 'about', 'aboutHi',
-  'artistName', 'artistRole', 'artistBio', 'artistQuote', 'mapsUrl', 'googleReviewUrl', 'voucherAmounts', 'passPrice', 'passValue', 'siteUrl'];
+  'artistName', 'artistRole', 'artistBio', 'artistQuote', 'mapsUrl', 'googleReviewUrl', 'voucherAmounts', 'passPrice', 'passValue', 'siteUrl', 'parking', 'cancelPolicy', 'instagram'];
 
 /* ================================================================ web */
 
@@ -155,7 +157,8 @@ function voucher_(d) {
   let price, value;
   if (kind === 'Workshop pass') { price = Number(s.passPrice) || 5000; value = Number(s.passValue) || 6000; }
   else {
-    const allowed = String(s.voucherAmounts || '1000,1500,2000,3000').split(',').map(x => Number(x.trim())).filter(Boolean);
+    let allowed = String(s.voucherAmounts || '').split(/[\s,;\/|]+/).map(Number).filter(n => n >= 100 && n <= 100000);
+    if (!allowed.length) allowed = [1000, 1500, 2000, 3000];
     price = value = Math.floor(Number(d.amount));
     if (!(price >= 500 && price <= 50000)) return { ok: false, error: 'amount', message: 'Choose a voucher amount.' };
     if (!allowed.includes(price) && price % 100) return { ok: false, error: 'amount', message: 'Choose a voucher amount.' };
@@ -228,6 +231,7 @@ function publicData_(withExtras) {
       .map(r => ({ name: String(r['Name']).trim(), workshop: String(r['Workshop'] || '').trim(), rating: Number(r['Rating']) || 5, review: String(r['Review']).trim() }))
       .reverse().slice(0, 12);
     out.gallery = gallery_(settings.galleryFolderId);
+    out.artworks = gallery_(settings.artworkFolderId);
   }
   return out;
 }
@@ -395,6 +399,7 @@ function onOpen() {
   SpreadsheetApp.getUi().createMenu('Studio')
     .addItem('Set up / upgrade sheets', 'setup')
     .addItem('Send tomorrow’s reminders now', 'sendReminders')
+    .addItem('Update craft list (remove pottery etc., add candle making)', 'updateCraftList')
     .addToUi();
 }
 
@@ -411,8 +416,8 @@ function setup() {
       ['w01', 'Aipan Art (Kumaoni folk)', 'Traditional Indian art', '2026-11-07', '11:00', 150, 12, 1200, 'per person', 'Beginner · Ages 14+', 'Learn the geru-and-rice-paste patterns of Kumaon and paint your own Aipan plate.', 'Open'],
       ['w02', 'Texture Art on Canvas', 'Mixed media & texture', '2026-11-08', '11:00', 180, 12, 1800, 'per person', 'Beginner', 'Build raised floral textures with modelling paste and palette knives on a 12×12 canvas.', 'Open'],
       ['w03', 'Acrylic Paint & Sip', 'Painting & drawing', '2026-11-08', '17:00', 150, 16, 1500, 'per person', 'No experience needed', 'A guided Mussoorie sunset painting with mocktails. Good for friends and date nights.', 'Open'],
-      ['w04', "Kids' Art Club (4 Saturdays)", 'Kids', '2026-11-14', '10:00', 90, 15, 3000, 'per child / month', 'Ages 6–12', 'Drawing, colour, clay and craft every Saturday in November. Screen-free and messy.', 'Open'],
-      ['w05', 'Pottery: Hand-building', 'Pottery & crafts', '2026-11-15', '11:00', 180, 10, 2000, 'per person', 'Beginner · Ages 14+', 'Pinch and coil a bowl and a planter. Pieces are fired and ready to collect in 2 weeks.', 'Open'],
+      ['w04', "Kids' Art Club (4 Saturdays)", 'Kids', '2026-11-14', '10:00', 90, 15, 3000, 'per child / month', 'Ages 6–12', 'Drawing, colour and craft every Saturday in November. Screen-free and messy.', 'Open'],
+      ['w05', 'Candle Making: Scented Soy Candles', 'Candle making', '2026-11-15', '11:00', 150, 12, 1500, 'per person', 'Beginner · Ages 12+', 'Pour two scented soy candles in glass jars and decorate a pillar candle to take home.', 'Open'],
       ['w06', 'Block Printing on Tote', 'Handicrafts', '2026-11-21', '11:00', 150, 12, 1500, 'per person', 'All levels', 'Hand-block print a cotton tote with traditional wooden blocks and fabric colours.', 'Open'],
     ];
     w.getRange(2, 1, rows.length, rows[0].length).setValues(rows);
@@ -436,8 +441,8 @@ function setup() {
   const s = ensure_(ss, TAB.S, ['Key', 'Value', 'What it is']);
   const defaults = [
     ['name', 'Rang Pahadi Studio', 'Studio name'],
-    ['tagline', "Hands-on art workshops in the Doon valley: Aipan, Madhubani, texture art, pottery, handicrafts and kids' classes. All materials included.", 'Short line under the name'],
-    ['taglineHi', 'दून घाटी में हाथों से कला सीखिए: ऐपण, मधुबनी, टेक्सचर आर्ट, मिट्टी के बर्तन, हस्तशिल्प और बच्चों की कक्षाएँ। सारी सामग्री शामिल।', 'Tagline in Hindi (for the हिं button)'],
+    ['tagline', NEW_TAGLINE, 'Short line under the name'],
+    ['taglineHi', NEW_TAGLINE_HI, 'Tagline in Hindi (for the हिं button)'],
     ['city', 'Dehradun · Uttarakhand', 'Shown above the name'],
     ['address', '', 'Studio address (also used for the map and directions)'],
     ['hours', 'Tue–Sun, 10 AM–7 PM', 'Opening hours'],
@@ -445,7 +450,7 @@ function setup() {
     ['upi', '', 'UPI ID students pay to (used for the payment QR code)'],
     ['upiName', 'Rang Pahadi Studio', 'Name shown in the UPI app when paying'],
     ['email', '', 'Studio email shown on the site; replies to booking emails go here'],
-    ['about', "Rang Pahadi Studio is a hands-on art studio in Dehradun, started by an artist who grew up with the colours of the hills. Many people say they \"can't draw\". The studio is here to prove them wrong, one afternoon at a time.\n\nWe teach the folk art of Uttarakhand and India, like Aipan, Madhubani and mandala, alongside texture art, mixed media, pottery and handicrafts. Every workshop is guided step by step, all materials are included, and you take home something you made yourself.\n\nCome alone, bring friends, or bring the kids. Our studio is a calm, messy and welcoming place to slow down and make something.", 'About us story (blank line between paragraphs)'],
+    ['about', "Rang Pahadi Studio is a hands-on art studio in Dehradun, started by an artist who grew up with the colours of the hills. Many people say they \"can't draw\". The studio is here to prove them wrong, one afternoon at a time.\n\nWe teach the folk art of Uttarakhand and India, like Aipan, alongside painting, texture art, mixed media, candle making and block printing. Every workshop is guided step by step, all materials are included, and you take home something you made yourself.\n\nCome alone, bring friends, or bring the kids. Our studio is a calm, messy and welcoming place to slow down and make something.", 'About us story (blank line between paragraphs)'],
     ['aboutHi', '', 'Optional: About us story in Hindi'],
     ['artistName', 'Akanksha Singhal', 'Artist name'],
     ['artistRole', 'Founder & lead artist', 'Artist role'],
@@ -455,14 +460,25 @@ function setup() {
     ['galleryFolderId', '', 'Link of a Google Drive folder with workshop photos (shows as the gallery)'],
     ['mapsUrl', '', 'Optional: your Google Maps link (otherwise the address is used)'],
     ['googleReviewUrl', '', 'Optional: your Google review link (from Google Business Profile)'],
-    ['voucherAmounts', '1000,1500,2000,3000', 'Gift voucher amounts offered, separated by commas'],
+    ['voucherAmounts', '1000, 1500, 2000, 3000', 'Gift voucher amounts, separated by a comma and a space'],
     ['passPrice', '5000', 'Workshop pass: what the buyer pays (₹)'],
     ['passValue', '6000', 'Workshop pass: credit they get to spend (₹)'],
     ['siteUrl', '', 'Your website address, used in emails'],
+    ['parking', '', 'Optional: parking / how to find us, shown in the FAQ'],
+    ['cancelPolicy', '', 'Optional: your cancellation rule, shown in the FAQ (default: free date change up to 48 hours before)'],
+    ['instagram', '', 'Your Instagram handle (e.g. rangpahadi) or profile link'],
+    ['artworkFolderId', '', 'Link of a Google Drive folder with YOUR artwork (the Gallery section). Caption = file description, e.g. "Monsoon Aipan · Acrylic on canvas · ₹4,500"'],
   ];
   const have = new Set(s.getLastRow() > 1 ? s.getRange(2, 1, s.getLastRow() - 1, 1).getValues().map(r => String(r[0]).trim()) : []);
   const add = defaults.filter(r => !have.has(r[0]));
   if (add.length) s.getRange(s.getLastRow() + 1, 1, add.length, 3).setValues(add);
+  // Google Sheets turns "1000,1500" into one big number: keep the amounts as text.
+  const keys = s.getRange(2, 1, s.getLastRow() - 1, 2).getValues();
+  keys.forEach((r, i) => {
+    if (String(r[0]).trim() !== 'voucherAmounts') return;
+    const ok = String(r[1]).split(/[\s,;\/|]+/).map(Number).filter(n => n >= 100 && n <= 100000).length;
+    if (!ok || typeof r[1] === 'number') s.getRange(i + 2, 2).setNumberFormat('@').setValue('1000, 1500, 2000, 3000');
+  });
   s.setColumnWidth(1, 140); s.setColumnWidth(2, 520); s.setColumnWidth(3, 360);
   s.getRange('B2:B').setWrap(true);
 
@@ -516,3 +532,40 @@ function ensure_(ss, name, head) {
   return sh;
 }
 function note_(sh, header, text) { try { sh.getRange(1, colOf_(sh, header)).setNote(text); } catch (e) {} }
+
+/**
+ * One-time update: removes Mandala, Madhubani, Pottery, Macramé and Ringaal workshops,
+ * adds Candle making, and refreshes the old tagline / About text if you never changed them.
+ * Existing bookings are not touched.
+ */
+function updateCraftList() {
+  const ss = SpreadsheetApp.getActive();
+  setup(); // makes sure "Candle making" is in the category dropdown
+  const w = ss.getSheetByName(TAB.W);
+  const vals = w.getDataRange().getValues(), head = vals[0].map(String);
+  const iT = head.indexOf('Title'), iC = head.indexOf('Category'), iD = head.indexOf('Description');
+  const removed = [];
+  for (let r = vals.length - 1; r >= 1; r--) {
+    const t = String(vals[r][iT]);
+    if (/mandala|madhubani|pottery|macram|ringaal/i.test(t) || String(vals[r][iC]) === 'Pottery & crafts') { removed.push(t); w.deleteRow(r + 1); }
+    else if (/clay and craft/i.test(String(vals[r][iD]))) w.getRange(r + 1, iD + 1).setValue(String(vals[r][iD]).replace(/,? ?clay and craft/i, ' and craft'));
+  }
+  const hasCandle = w.getDataRange().getValues().slice(1).some(r => String(r[iC]) === 'Candle making');
+  if (!hasCandle) {
+    const tz = tz_(), sat = n => { const d = new Date(); d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7 || 7) + 7 * n); return Utilities.formatDate(d, tz, 'yyyy-MM-dd'); };
+    [[sat(1), '15:00'], [sat(3), '11:00']].forEach(([date, time], k) => appendByHeader_(w, {
+      'ID': 'wcandle' + (k + 1), 'Title': 'Candle Making: Scented Soy Candles', 'Category': 'Candle making', 'Date': date, 'Start time': time,
+      'Duration (min)': 150, 'Seats': 12, 'Price (₹)': 1500, 'Price label': 'per person', 'Level': 'Beginner · Ages 12+',
+      'Description': 'Pour two scented soy candles in glass jars and decorate a pillar candle to take home.', 'Status': 'Open',
+      'Title (Hindi)': 'मोमबत्ती बनाना: खुशबूदार सोया मोमबत्तियाँ' }));
+  }
+  const s = ss.getSheetByName(TAB.S), rows = s.getRange(2, 1, s.getLastRow() - 1, 2).getValues();
+  rows.forEach((r, i) => {
+    const k = String(r[0]).trim(), v = String(r[1]);
+    if (k === 'tagline' && /madhubani|pottery/i.test(v)) s.getRange(i + 2, 2).setValue(NEW_TAGLINE);
+    if (k === 'taglineHi' && /मधुबनी|मिट्टी/.test(v)) s.getRange(i + 2, 2).setValue(NEW_TAGLINE_HI);
+    if (k === 'about' && /madhubani|pottery|mandala/i.test(v)) s.getRange(i + 2, 2).setValue(v
+      .replace(/like Aipan, Madhubani and mandala, alongside texture art, mixed media, pottery and handicrafts\./, 'like Aipan, alongside painting, texture art, mixed media, candle making and block printing.'));
+  });
+  SpreadsheetApp.getActive().toast(`Removed ${removed.length} workshop(s)${hasCandle ? '' : ' and added 2 Candle making workshops'}. Check the dates in Workshops.`, 'Craft list updated', 8);
+}
