@@ -353,13 +353,13 @@ function gallerySection(){
   if (!S.gallery.length) return null;
   return el('section',{class:'block',id:'gallery'},
     el('div',{class:'block-head'}, el('div',null, el('h2',null,t('gallery_h')), el('p',{class:'desc'},t('gallery_sub')))),
-    el('div',{class:'gallery'}, S.gallery.map((g,i) => el('button',{type:'button',class:'g-item',onclick:()=>openLightbox(i, S.gallery),'aria-label':g.caption||'Photo'},
-      el('img',{src:g.thumb,alt:g.caption||'',loading:'lazy'}), g.caption ? el('span',null,g.caption) : null))));
+    el('div',{class:'gallery'}, S.gallery.map((g,i) => el('button',{type:'button',class:'g-item',onclick:()=>openLightbox(i, S.gallery),'aria-label':cleanCaption(g.caption)||'Photo'},
+      el('img',{src:g.thumb,alt:cleanCaption(g.caption),loading:'lazy'}), g.caption ? el('span',null,cleanCaption(g.caption)) : null))));
 }
 function openLightbox(i, list = S.gallery, isArt = false){
   const g = list[i]; if (!g) return;
   const go = d => openLightbox((i + d + list.length) % list.length, list, isArt);
-  const info = isArt ? artInfo(g.caption) : {title:g.caption||'', price:''};
+  const info = isArt ? artInfo(g.caption) : {title:cleanCaption(g.caption), price:''};
   const ask = isArt ? waLink(`Hi ${studioName()}! I love the artwork "${info.title || 'from your gallery'}". Is it available? ${g.full}`) : null;
   openModal(el('div',{class:'lightbox',role:'dialog','aria-modal':'true'},
     el('img',{src:g.full,alt:info.title||''}),
@@ -376,8 +376,11 @@ function igHandle(){ const v = String(S.settings.instagram||'').trim(); if (!v) 
 function igUrl(){ const h = igHandle(); return h ? 'https://www.instagram.com/' + h.slice(1) + '/' : ''; }
 function igIcon(){ return el('span',{class:'ig-icon','aria-hidden':'true',html:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>'}); }
 /* Caption from the Drive file description or name, e.g. "Monsoon Aipan · Acrylic on canvas · ₹4,500" */
+function cleanCaption(t){
+  return String(t||'').replace(/<[^>]*>/g,' ').replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/[\u200e\u200f\u202a-\u202e]/g,'').replace(/\s+/g,' ').trim();
+}
 function artInfo(caption){
-  const parts = String(caption||'').split(/\s*[·|]\s*/).filter(Boolean);
+  const parts = cleanCaption(caption).split(/\s*[·|]\s*/).filter(Boolean);
   const pi = parts.findIndex(x => /₹|rs\.?\s*\d|^sold$/i.test(x));
   const price = pi >= 0 ? parts.splice(pi,1)[0].replace(/^rs\.?\s*/i,'₹') : '';
   return { title: parts[0] || '', detail: parts.slice(1).join(' · '), price: /^sold$/i.test(price) ? (S.lang==='hi'?'बिक गया':'Sold') : price };
