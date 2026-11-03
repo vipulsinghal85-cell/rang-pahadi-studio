@@ -12,7 +12,7 @@ try { S.lang = localStorage.getItem('rp-lang') === 'hi' ? 'hi' : 'en'; } catch {
 /* ---------------------------------------------------------------- words */
 const I18N = {
   en: {
-    nav_workshops:'Workshops', nav_gallery:'Gallery', nav_gift:'Gift', nav_about:'About us', nav_faq:'FAQ', nav_visit:'Visit', lang_btn:'हिं',
+    nav_workshops:'Workshops', nav_gallery:'Gallery', nav_paint:'Paint for me', nav_gift:'Gift', nav_about:'About us', nav_faq:'FAQ', nav_visit:'Visit', lang_btn:'हिं',
     see_all:'See all workshops', about_us:'About us', find_btn:'Find my workshop', parties:'Parties & groups', explore:'Explore', everything:'Everything',
     facts:['Batches of 10–16','All materials included','Take your art home'], next_ws:'Next workshop',
     seats_left:(l,t)=>`${l} of ${t} seats left`, full:'Fully booked', book:'Book a seat', waitlist:'Join waitlist', cancelled:'Cancelled',
@@ -40,7 +40,7 @@ const I18N = {
     err_name:'Please add your name.', err_phone:'Please add a 10-digit mobile number so the studio can reach you.', err_generic:'That didn’t go through. Check your connection and try again, or send it on WhatsApp.',
   },
   hi: {
-    nav_workshops:'कार्यशालाएँ', nav_gallery:'गैलरी', nav_gift:'उपहार', nav_about:'हमारे बारे में', nav_faq:'सवाल', nav_visit:'पता', lang_btn:'EN',
+    nav_workshops:'कार्यशालाएँ', nav_gallery:'गैलरी', nav_paint:'मेरे लिए पेंट', nav_gift:'उपहार', nav_about:'हमारे बारे में', nav_faq:'सवाल', nav_visit:'पता', lang_btn:'EN',
     see_all:'सभी कार्यशालाएँ देखें', about_us:'हमारे बारे में', find_btn:'मेरी कार्यशाला खोजें', parties:'पार्टी और ग्रुप', explore:'देखें', everything:'सब',
     facts:['10–16 लोगों के बैच','सारी सामग्री शामिल','अपनी कला घर ले जाएँ'], next_ws:'अगली कार्यशाला',
     seats_left:(l,t)=>`${t} में से ${l} सीटें बाकी`, full:'सभी सीटें भर गईं', book:'सीट बुक करें', waitlist:'प्रतीक्षा सूची में जुड़ें', cancelled:'रद्द',
@@ -84,7 +84,7 @@ function sampleData(){
     settings:{ name:'Rang Pahadi Studio', city:'Dehradun · Uttarakhand', hours:'Tue–Sun, 10 AM–7 PM', whatsapp:CFG.WHATSAPP||'', voucherAmounts:'1000,1500,2000,3000', passPrice:'5000', passValue:'6000', upiName:'Rang Pahadi Studio',
       tagline:"Hands-on art workshops in the Doon valley: Aipan, painting, texture art, candle making, block printing and kids' classes. All materials included.",
       taglineHi:'दून घाटी में हाथों से कला सीखिए: ऐपण, पेंटिंग, टेक्सचर आर्ट, मोमबत्ती बनाना, ठप्पा छपाई और बच्चों की कक्षाएँ। सारी सामग्री शामिल।',
-      about:"Rang Pahadi Studio is a hands-on art studio in Dehradun, started by an artist who grew up with the colours of the hills. Many people say they \"can't draw\". The studio is here to prove them wrong, one afternoon at a time.\n\nWe teach the folk art of Uttarakhand and India, like Aipan, alongside painting, texture art, mixed media, candle making and block printing. Every workshop is guided step by step, all materials are included, and you take home something you made yourself.",
+      about:"Rang Pahadi Studio is a hands-on art studio in Dehradun, started by an artist who grew up with the colours of the hills. Many people say they \"can't paint\". The studio is here to prove them wrong, one afternoon at a time.\n\nWe teach the folk art of Uttarakhand and India, like Aipan, alongside painting, texture art, mixed media, candle making and block printing. Every workshop is guided step by step, all materials are included, and you take home something you made yourself.",
       artistName:'Akanksha Singhal', artistRole:'Founder & lead artist',
       artistBio:'Akanksha Singhal is a Dehradun-based artist working across painting, mixed media, texture art and traditional Indian folk forms. She started Rang Pahadi Studio to share the joy of making art with anyone who walks in, from first-timers to practising artists.',
       artistQuote:'Everyone can make art. Most people just need a table, good materials and an afternoon.' },
@@ -235,6 +235,9 @@ function render(){
   document.documentElement.lang = S.lang;
   document.title = `${studioName()} · Art workshops in Dehradun`;
   document.getElementById('brandmini').textContent = studioName();
+  let navPaint = document.querySelector('[data-i18n="nav_paint"]');
+  if (!navPaint) { const g = document.querySelector('[data-i18n="nav_gift"]'); if (g) { navPaint = el('a',{href:'#commission','data-i18n':'nav_paint'}); g.before(navPaint); } }
+  if (navPaint) navPaint.hidden = !commissionsOpen();
   document.querySelectorAll('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
   const navGallery = document.querySelector('[data-i18n="nav_gallery"]'); if (navGallery) { navGallery.hidden = !(S.artworks.length || S.gallery.length || igUrl()); navGallery.setAttribute('href', (S.artworks.length || igUrl()) ? '#artwork' : '#gallery'); }
 
