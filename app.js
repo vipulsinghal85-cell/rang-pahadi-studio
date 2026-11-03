@@ -6,7 +6,7 @@ const API = String(CFG.SHEET_API_URL || '').trim();
 const CACHE_KEY = 'rp-studio-cache-v2';
 const CATS = ['Traditional Indian art','Painting & drawing','Mixed media & texture','Candle making','Handicrafts','Kids'];
 
-const S = { settings:{}, workshops:[], gallery:[], reviews:[], loaded:false, error:false, demo:!API, cat:'All', updated:null, lang:'en' };
+const S = { settings:{}, workshops:[], gallery:[], artworks:[], reviews:[], loaded:false, error:false, demo:!API, cat:'All', updated:null, lang:'en' };
 try { S.lang = localStorage.getItem('rp-lang') === 'hi' ? 'hi' : 'en'; } catch {}
 
 /* ---------------------------------------------------------------- words */
@@ -236,7 +236,7 @@ function render(){
   document.title = `${studioName()} · Art workshops in Dehradun`;
   document.getElementById('brandmini').textContent = studioName();
   document.querySelectorAll('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
-  const navGallery = document.querySelector('a[href="#gallery"]'); if (navGallery) navGallery.hidden = !S.gallery.length;
+  const navGallery = document.querySelector('[data-i18n="nav_gallery"]'); if (navGallery) { navGallery.hidden = !(S.artworks.length || S.gallery.length || igUrl()); navGallery.setAttribute('href', (S.artworks.length || igUrl()) ? '#artwork' : '#gallery'); }
 
   const next = upcoming().find(w => w.status!=='cancelled' && (S.cat==='All' || w.category===S.cat));
   const picked = S.cat !== 'All';
@@ -289,6 +289,7 @@ function render(){
       el('div',{class:'section-head'}, el('h2',null,t('upcoming')),
         el('button',{type:'button',class:'quiz-link',onclick:openQuiz}, t('not_sure'),' ', el('b',null,t('find_btn')+' →'))),
       chips, grid,
+      artworkSection(),
       gallerySection(),
       aipanSection(),
       reviewsSection(),
@@ -299,6 +300,7 @@ function render(){
     ),
     el('footer',null, el('div',{class:'wrap'},
       el('span',null, `© ${new Date().getFullYear()} ${studioName()} · ${st.city||'Dehradun, Uttarakhand'}`),
+      igUrl() ? el('a',{class:'footer-ig',href:igUrl(),target:'_blank',rel:'noopener'}, igIcon(), ' ', igHandle()) : null,
       S.updated ? el('span',{class:'updated'}, 'Calendar updated '+new Date(S.updated).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})) : null))
   ].filter(Boolean));
   updateStructuredData();
@@ -351,16 +353,52 @@ function gallerySection(){
   if (!S.gallery.length) return null;
   return el('section',{class:'block',id:'gallery'},
     el('div',{class:'block-head'}, el('div',null, el('h2',null,t('gallery_h')), el('p',{class:'desc'},t('gallery_sub')))),
-    el('div',{class:'gallery'}, S.gallery.map((g,i) => el('button',{type:'button',class:'g-item',onclick:()=>openLightbox(i),'aria-label':g.caption||'Photo'},
+    el('div',{class:'gallery'}, S.gallery.map((g,i) => el('button',{type:'button',class:'g-item',onclick:()=>openLightbox(i, S.gallery),'aria-label':g.caption||'Photo'},
       el('img',{src:g.thumb,alt:g.caption||'',loading:'lazy'}), g.caption ? el('span',null,g.caption) : null))));
 }
-function openLightbox(i){
-  const g = S.gallery[i]; if (!g) return;
-  const go = d => openLightbox((i + d + S.gallery.length) % S.gallery.length);
+function openLightbox(i, list = S.gallery, isArt = false){
+  const g = list[i]; if (!g) return;
+  const go = d => openLightbox((i + d + list.length) % list.length, list, isArt);
+  const info = isArt ? artInfo(g.caption) : {title:g.caption||'', price:''};
+  const ask = isArt ? waLink(`Hi ${studioName()}! I love the artwork "${info.title || 'from your gallery'}". Is it available? ${g.full}`) : null;
   openModal(el('div',{class:'lightbox',role:'dialog','aria-modal':'true'},
-    el('img',{src:g.full,alt:g.caption||''}),
-    el('div',{class:'lb-bar'}, el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>go(-1)},'←'), el('span',null,g.caption||''),
-      el('span',{class:'actions'}, el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>go(1)},'→'), el('button',{type:'button',class:'btn btn-primary btn-sm',onclick:closeModal},t('close'))))), 'wide');
+    el('img',{src:g.full,alt:info.title||''}),
+    el('div',{class:'lb-bar'}, el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>go(-1),'aria-label':'Previous'},'←'),
+      el('span',{class:'lb-cap'}, el('b',null,info.title||''), info.price ? el('span',{class:'art-price'}, info.price) : null),
+      el('span',{class:'actions'},
+        ask ? el('a',{class:'btn btn-primary btn-sm',href:ask,target:'_blank',rel:'noopener'}, info.price ? (S.lang==='hi'?'खरीदने के लिए पूछें':'Ask to buy') : (S.lang==='hi'?'इसके बारे में पूछें':'Ask about this piece')) : null,
+        el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>go(1),'aria-label':'Next'},'→'),
+        el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:closeModal},t('close'))))), 'wide');
+}
+
+/* ----------------------------------------------- artist's own artwork */
+function igHandle(){ const v = String(S.settings.instagram||'').trim(); if (!v) return ''; const m = v.match(/instagram\.com\/([A-Za-z0-9._]+)/i); return '@' + (m ? m[1] : v.replace(/^@/,'')); }
+function igUrl(){ const h = igHandle(); return h ? 'https://www.instagram.com/' + h.slice(1) + '/' : ''; }
+function igIcon(){ return el('span',{class:'ig-icon','aria-hidden':'true',html:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>'}); }
+/* Caption from the Drive file description or name, e.g. "Monsoon Aipan · Acrylic on canvas · ₹4,500" */
+function artInfo(caption){
+  const parts = String(caption||'').split(/\s*[·|]\s*/).filter(Boolean);
+  const pi = parts.findIndex(x => /₹|rs\.?\s*\d|^sold$/i.test(x));
+  const price = pi >= 0 ? parts.splice(pi,1)[0].replace(/^rs\.?\s*/i,'₹') : '';
+  return { title: parts[0] || '', detail: parts.slice(1).join(' · '), price: /^sold$/i.test(price) ? (S.lang==='hi'?'बिक गया':'Sold') : price };
+}
+function artworkSection(){
+  const ig = igUrl(), artist = S.settings.artistName || '';
+  if (!S.artworks.length && !ig) return null;
+  const head = el('div',{class:'block-head'},
+    el('div',null,
+      el('div',{class:'eyebrow',style:'color:var(--geru);opacity:1'}, S.lang==='hi'?'गैलरी':'Gallery'),
+      el('h2',null, artist ? (S.lang==='hi' ? `${artist} की कलाकृतियाँ` : `Artwork by ${artist}`) : (S.lang==='hi'?'हमारी कलाकृतियाँ':'Our artwork')),
+      el('p',{class:'desc'}, S.lang==='hi'?'मूल पेंटिंग, ऐपण और टेक्सचर आर्ट। किसी भी तस्वीर पर टैप करके बड़ा देखें या खरीदने के लिए पूछें।':'Original paintings, Aipan and texture art. Tap any piece to see it large or ask about buying it.')),
+    ig ? el('a',{class:'btn btn-ghost ig-btn',href:ig,target:'_blank',rel:'noopener'}, igIcon(), ' ', igHandle()) : null);
+  if (!S.artworks.length) return el('section',{class:'block',id:'artwork'}, head,
+    el('a',{class:'ig-strip',href:ig,target:'_blank',rel:'noopener'}, igIcon(), el('span',null, S.lang==='hi'?'नई कलाकृतियाँ और कार्यशालाओं की झलक Instagram पर देखें':'See the latest artwork and workshop moments on Instagram'), el('b',null,'→')));
+  return el('section',{class:'block',id:'artwork'}, head,
+    el('div',{class:'art-grid'}, S.artworks.map((g,i) => { const a = artInfo(g.caption);
+      return el('button',{type:'button',class:'art-item',onclick:()=>openLightbox(i, S.artworks, true),'aria-label':a.title||'Artwork'},
+        el('img',{src:g.thumb,alt:a.title||'',loading:'lazy'}),
+        (a.title || a.price) ? el('span',{class:'art-cap'}, el('span',null, el('b',null,a.title), a.detail ? el('small',null,a.detail) : null), a.price ? el('span',{class:'art-price'},a.price) : null) : null); })),
+    ig ? el('a',{class:'ig-strip',href:ig,target:'_blank',rel:'noopener',style:'margin-top:16px'}, igIcon(), el('span',null, S.lang==='hi'?`और कलाकृतियाँ ${igHandle()} पर`:`More work and behind-the-scenes on ${igHandle()}`), el('b',null,'→')) : null);
 }
 
 /* ------------------------------------------------------------ reviews */
@@ -411,7 +449,8 @@ function aboutSection(st){
       el('div',{class:'artist-head'}, el('img',{class:'avatar-img',src:'logo-192.png',alt:''}),
         el('div',null, el('h3',null, artist), el('div',{class:'role'}, st.artistRole || 'Founder & lead artist'))),
       st.artistBio ? el('p',null, st.artistBio) : null,
-      st.artistQuote ? el('div',{class:'quote'}, '“'+st.artistQuote+'”') : null) : null);
+      st.artistQuote ? el('div',{class:'quote'}, '“'+st.artistQuote+'”') : null,
+      igUrl() ? el('a',{class:'btn btn-ghost ig-btn',href:igUrl(),target:'_blank',rel:'noopener',style:'margin-top:16px'}, igIcon(), (S.lang==='hi'?' Instagram पर देखें ':' Follow on Instagram ')) : null) : null);
 }
 
 function groupsPanel(groupWA){
@@ -920,6 +959,7 @@ function apply(data){
   S.settings = data.settings || {};
   S.workshops = Array.isArray(data.workshops) ? data.workshops : [];
   S.gallery = Array.isArray(data.gallery) ? data.gallery : [];
+  S.artworks = Array.isArray(data.artworks) ? data.artworks : [];
   S.reviews = Array.isArray(data.reviews) ? data.reviews : [];
   S.updated = data.updated || null;
   S.loaded = true;
