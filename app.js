@@ -290,6 +290,7 @@ function render(){
         el('button',{type:'button',class:'quiz-link',onclick:openQuiz}, t('not_sure'),' ', el('b',null,t('find_btn')+' →'))),
       chips, grid,
       artworkSection(),
+      commissionSection(),
       gallerySection(),
       aipanSection(),
       reviewsSection(),
@@ -367,6 +368,7 @@ function openLightbox(i, list = S.gallery, isArt = false){
       el('span',{class:'lb-cap'}, el('b',null,info.title||''), info.price ? el('span',{class:'art-price'}, info.price) : null),
       el('span',{class:'actions'},
         ask ? el('a',{class:'btn btn-primary btn-sm',href:ask,target:'_blank',rel:'noopener'}, info.price ? (S.lang==='hi'?'खरीदने के लिए पूछें':'Ask to buy') : (S.lang==='hi'?'इसके बारे में पूछें':'Ask about this piece')) : null,
+        isArt && commissionsOpen() ? el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>openCommission(info.title)}, S.lang==='hi'?'ऐसी ही बनवाएँ':'Make one like this') : null,
         el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>go(1),'aria-label':'Next'},'→'),
         el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:closeModal},t('close'))))), 'wide');
 }
@@ -402,6 +404,110 @@ function artworkSection(){
         el('img',{src:g.thumb,alt:a.title||'',loading:'lazy'}),
         (a.title || a.price) ? el('span',{class:'art-cap'}, el('span',null, el('b',null,a.title), a.detail ? el('small',null,a.detail) : null), a.price ? el('span',{class:'art-price'},a.price) : null) : null); })),
     ig ? el('a',{class:'ig-strip',href:ig,target:'_blank',rel:'noopener',style:'margin-top:16px'}, igIcon(), el('span',null, S.lang==='hi'?`और कलाकृतियाँ ${igHandle()} पर`:`More work and behind-the-scenes on ${igHandle()}`), el('b',null,'→')) : null);
+}
+
+/* styles for the commission section (kept here so only app.js needs updating) */
+(function(){ if (document.getElementById('cm-css')) return; const st = document.createElement('style'); st.id = 'cm-css'; st.textContent = `.commission{position:relative;overflow:hidden;background:#2f5240;color:#fff;border-radius:24px;padding:clamp(22px,4vw,40px)}
+.commission .cm-motif{position:absolute;width:min(460px,70vw);aspect-ratio:1;right:-120px;top:-90px;color:#fff;opacity:.13;pointer-events:none}
+.commission .cm-motif svg{width:100%;height:100%}
+.commission .cm-body{position:relative;max-width:720px}
+.commission .eyebrow{color:#fff;opacity:.8}
+.commission h2{color:#fff;font-size:clamp(28px,4.4vw,42px);margin:6px 0 10px}
+.cm-lede{font-size:16px;line-height:1.55;margin:0 0 20px;opacity:.92;max-width:58ch}
+.cm-steps{list-style:none;padding:0;margin:0 0 22px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.cm-steps li{display:flex;gap:10px;align-items:flex-start;background:rgba(255,255,255,.1);border-radius:14px;padding:12px 14px}
+.cm-steps b{display:block;font-size:14.5px}.cm-steps small{display:block;opacity:.85;font-size:13px;line-height:1.4;margin-top:2px}
+.cm-n{flex:none;width:26px;height:26px;border-radius:50%;background:#fff;color:#2f5240;font-weight:800;display:grid;place-items:center;font-size:13px}
+.cm-btn{background:#fff;color:#2f5240;border-color:#fff;font-weight:700}
+.cm-btn:hover{background:#f3efe9}
+.cm-file{margin-top:6px;font:inherit;font-size:13.5px}
+.cm-prev{display:flex;gap:10px;align-items:center;margin-top:8px;font-size:13px;color:var(--muted)}
+.cm-prev img{width:84px;height:84px;object-fit:cover;border-radius:10px;border:1px solid var(--line)}
+.cm-done{text-align:center;padding:10px 4px}
+.cm-done .cm-tick{width:56px;height:56px;border-radius:50%;background:#2f5240;color:#fff;font-size:28px;display:grid;place-items:center;margin:0 auto 12px}
+.cm-done .modal-foot{justify-content:center}
+@media (max-width:640px){.cm-steps{grid-template-columns:1fr}}
+`; document.head.append(st); })();
+
+/* ------------------------------------------- "Paint something for me" */
+function commissionsOpen(){ return !/^(no|off|false|0)$/i.test(String(S.settings.commissions||'yes').trim()); }
+const CM = {
+  what: [['Canvas painting','कैनवास पेंटिंग'],['Texture art','टेक्सचर आर्ट'],['Hand-painted plate','हाथ से पेंट की गई प्लेट'],['Folk art (Aipan, Warli…)','लोक कला (ऐपण, वारली…)'],['Candles / gift set','मोमबत्ती / गिफ्ट सेट'],['Something else','कुछ और']],
+  size: [['Not sure yet','अभी तय नहीं'],['Small (up to 12 in)','छोटा (12 इंच तक)'],['Medium (16–20 in)','मध्यम (16–20 इंच)'],['Large (24 in or more)','बड़ा (24 इंच या ज़्यादा)'],['A set of pieces','कई कृतियों का सेट']],
+  budget: [['Not sure yet','अभी तय नहीं'],['Under ₹2,000','₹2,000 से कम'],['₹2,000–5,000','₹2,000–5,000'],['₹5,000–10,000','₹5,000–10,000'],['₹10,000+','₹10,000+']],
+};
+const cmOpt = list => list.map(([en,hi]) => el('option',{value:en}, S.lang==='hi'?hi:en));
+function commissionSection(){
+  if (!commissionsOpen()) return null;
+  const hi = S.lang==='hi', note = String(S.settings.commissionNote||'').trim();
+  const steps = hi ? [['1','अपना आइडिया बताइए','रंग, साइज़, मौका और एक रेफ़रेंस फ़ोटो।'],['2','कोटेशन पाइए','2 दिन में WhatsApp पर दाम और समय।'],['3','आपकी कलाकृति','स्केच मंज़ूर होते ही हम बनाना शुरू करते हैं।']]
+                 : [['1','Share your idea','Colours, size, occasion and a reference photo.'],['2','Get a quote','A price and timeline on WhatsApp within 2 days.'],['3','Your own artwork','Painting starts once you approve the sketch.']];
+  return el('section',{class:'block commission',id:'commission'},
+    el('div',{class:'cm-motif','aria-hidden':'true',html:motif('aipan')}),
+    el('div',{class:'cm-body'},
+      el('div',{class:'eyebrow'}, hi?'कस्टम कलाकृति':'Custom artwork'),
+      el('h2',null, hi?'मेरे लिए कुछ पेंट कीजिए':'Paint something for me'),
+      el('p',{class:'cm-lede'}, note || (hi ? 'आपके घर, आपके रंग, आपकी कहानी। पेंटिंग, टेक्सचर आर्ट, ऐपण, प्लेट्स या गिफ्ट। शादी, गृहप्रवेश या किसी अपने के लिए।'
+        : 'Your walls, your colours, your story. A painting, texture art, Aipan, a plate or a gift, made by hand for a new home, a wedding or someone you love.')),
+      el('ol',{class:'cm-steps'}, steps.map(([n,h,d]) => el('li',null, el('span',{class:'cm-n'},n), el('div',null, el('b',null,h), el('small',null,d))))),
+      el('div',{class:'actions',style:'justify-content:flex-start'}, el('button',{type:'button',class:'btn cm-btn',onclick:()=>openCommission()}, hi?'अपना आइडिया भेजें':'Tell us your idea'))));
+}
+function shrinkImage(file, max = 1400){
+  return new Promise((resolve, reject) => {
+    const img = new Image(), url = URL.createObjectURL(file);
+    img.onload = () => { const k = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement('canvas'); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
+      const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0,0,c.width,c.height); x.drawImage(img,0,0,c.width,c.height);
+      URL.revokeObjectURL(url); resolve(c.toDataURL('image/jpeg', 0.82)); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('img')); };
+    img.src = url;
+  });
+}
+function openCommission(similarTo){
+  const hi = S.lang==='hi', c = loadContact();
+  const name = el('input',{autocomplete:'name',value:c.name||''}), phone = el('input',{inputmode:'tel',autocomplete:'tel',value:c.phone||'',placeholder:'10-digit mobile'});
+  const email = el('input',{type:'email',autocomplete:'email',value:c.email||'',placeholder:'you@example.com'});
+  const what = el('select',null, cmOpt(CM.what)), size = el('select',null, cmOpt(CM.size)), budget = el('select',null, cmOpt(CM.budget));
+  const by = el('input',{type:'date',min:new Date().toISOString().slice(0,10)}), occasion = el('input',{placeholder: hi?'जैसे गृहप्रवेश, सालगिरह, ऑफ़िस':'e.g. new home, anniversary, office lobby'});
+  const idea = el('textarea',{rows:4,placeholder: hi?'क्या बनवाना है? रंग, थीम, कमरा, किसके लिए…':'What would you like? Colours, theme, the room it’s for, who it’s for…'});
+  if (similarTo) idea.value = (hi?'इस जैसी कृति: ':'Something like “') + similarTo + (hi?'':'”') + '. ';
+  const fileIn = el('input',{type:'file',accept:'image/*',class:'cm-file'}), prev = el('div',{class:'cm-prev'});
+  let photo = '';
+  fileIn.addEventListener('change', async () => { photo = ''; prev.replaceChildren(); const f = fileIn.files && fileIn.files[0]; if (!f) return;
+    prev.textContent = hi?'फ़ोटो तैयार हो रही है…':'Preparing photo…';
+    try { photo = await shrinkImage(f); prev.replaceChildren(el('img',{src:photo,alt:''}), el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>{photo='';fileIn.value='';prev.replaceChildren();}}, hi?'हटाएँ':'Remove')); }
+    catch { prev.textContent = hi?'यह फ़ोटो नहीं खुली। कोई और फ़ोटो चुनें।':'That photo couldn’t be opened. Try another one.'; } });
+  const hp = honeypot(), err = el('div',{class:'err',role:'alert'});
+  const send = el('button',{type:'submit',class:'btn btn-primary'}, hi?'आइडिया भेजें':'Send my idea');
+  const body = el('div');
+  const done = (id) => body.replaceChildren(el('div',{class:'cm-done'},
+      el('div',{class:'cm-tick','aria-hidden':'true'},'✓'), el('h2',null, hi?'आपका आइडिया मिल गया!':'Your idea is with us!'),
+      el('p',{class:'desc'}, hi?`${S.settings.artistName||'हम'} 2 दिन में WhatsApp पर दाम और समय के साथ संपर्क करेंगे।`:`${S.settings.artistName||'The studio'} will WhatsApp you within 2 days with a price and timeline.`),
+      id ? el('p',{class:'meta'}, (hi?'रेफ़रेंस: ':'Reference: '), el('b',null,id)) : null,
+      el('div',{class:'modal-foot'}, el('button',{type:'button',class:'btn btn-primary',onclick:closeModal}, t('close')))));
+  body.append(el('div',{class:'eyebrow',style:'color:var(--geru)'}, hi?'कस्टम कलाकृति':'Custom artwork'),
+    el('h2',null, hi?'मेरे लिए कुछ पेंट कीजिए':'Paint something for me'),
+    el('p',{class:'desc'}, hi?'जितना हो सके बताइए। अभी तय नहीं है तो भी ठीक है, हम मिलकर तय करेंगे।':'Tell us as much as you can. Not sure yet? That’s fine, we’ll work it out together.'),
+    el('form',{novalidate:true,onsubmit:async e=>{ e.preventDefault(); err.textContent='';
+      if (!validPerson(name, phone, err)) return;
+      if (idea.value.trim().length < 5 && !photo) { err.textContent = hi?'अपने आइडिया के बारे में थोड़ा लिखें या एक फ़ोटो जोड़ें।':'Please describe your idea or add a reference photo.'; idea.focus(); return; }
+      saveContact({name:name.value.trim(), phone:phone.value.trim(), email:email.value.trim()});
+      const d = {name:name.value.trim(), phone:phone.value.trim(), email:email.value.trim(), what:what.value, size:size.value, budget:budget.value, by:by.value, occasion:occasion.value.trim(), idea:idea.value.trim(), photo, website:hp.value};
+      if (!API) { const l = waLink(`Hi ${studioName()}! I'd like a custom piece.\nWhat: ${d.what}\nSize: ${d.size}\nBudget: ${d.budget}${d.by?'\nNeeded by: '+d.by:''}${d.occasion?'\nOccasion: '+d.occasion:''}\n${d.idea}\n— ${d.name}, ${d.phone}`); if (l) window.open(l,'_blank','noopener'); closeModal(); return; }
+      send.disabled = true; send.textContent = hi?'भेज रहे हैं…':'Sending…';
+      try { const r = await api('commission', d); if (r.ok) { done(r.id); return; } err.textContent = r.message || t('err_generic'); }
+      catch { err.textContent = t('err_generic'); }
+      send.disabled = false; send.textContent = hi?'आइडिया भेजें':'Send my idea'; }},
+      el('div',{class:'form'},
+        field(t('name'),name), field(t('mobile'),phone), field('Email', email, true),
+        field(hi?'क्या बनवाना है':'What would you like?', what), field(hi?'साइज़':'Size', size),
+        field(hi?'बजट':'Budget', budget), field(hi?'कब तक चाहिए':'Needed by', by),
+        field(hi?'मौका':'Occasion', occasion, true),
+        field(hi?'आपका आइडिया':'Your idea', idea, true),
+        el('label',{class:'full'}, hi?'रेफ़रेंस फ़ोटो (वैकल्पिक): दीवार, कमरा या पसंदीदा डिज़ाइन':'Reference photo (optional): your wall, the room, or a design you like', fileIn, prev),
+        el('label',{class:'hp'},hp)),
+      err, el('div',{class:'modal-foot'}, el('button',{type:'button',class:'btn btn-ghost',onclick:closeModal},t('close')), send)));
+  openModal(modal(body));
 }
 
 /* ------------------------------------------------------------ reviews */
@@ -854,6 +960,7 @@ function faqItems(st){
     ['स्टूडियो कहाँ है? पार्किंग है?', `${addr} ${parking}`.trim()],
     ['ग्रुप या पार्टी के लिए?','हाँ! जन्मदिन, किटी पार्टी, स्कूल और ऑफ़िस टीम के लिए 8 लोगों से निजी सत्र रखते हैं। नीचे “पूछताछ भेजें” दबाइए।'],
     ['कलाकृति कब घर ले जा सकते हैं?','ज़्यादातर चीज़ें उसी दिन। टेक्सचर आर्ट को सूखने में एक दिन लग सकता है; हम बता देंगे।'],
+    ...(commissionsOpen() ? [['क्या आप मेरे लिए कस्टम पेंटिंग बनाती हैं?','हाँ! “मेरे लिए कुछ पेंट कीजिए” में अपना आइडिया और एक फ़ोटो भेजें। 2 दिन में दाम और समय बता देंगे। काम शुरू होने पर 50% अग्रिम लिया जाता है।']] : []),
   ] : [
     ['Do I need any art experience?','Not at all. Every workshop starts from the basics, and the artist guides you step by step.'],
     ['What’s included in the price?','All materials: paints, canvas, wax, brushes and aprons. You take home what you make.'],
@@ -864,6 +971,7 @@ function faqItems(st){
     ['Where is the studio? Is there parking?', `${addr} ${parking}`.trim()],
     ['Can I book for a group or party?','Yes! We run private sessions for birthdays, kitty parties, schools and office teams, from 8 people. Use “Send an enquiry” below.'],
     ['When can I take my artwork home?','Most pieces go home the same day. Texture art can need a day to dry; we’ll let you know.'],
+    ...(commissionsOpen() ? [['Can I order a custom painting?','Yes! Use “Paint something for me” to share your idea and a reference photo. You’ll get a price and timeline within 2 days. A 50% advance starts the work.']] : []),
   ];
 }
 function faqSection(st){
