@@ -399,7 +399,6 @@ function onOpen() {
   SpreadsheetApp.getUi().createMenu('Studio')
     .addItem('Set up / upgrade sheets', 'setup')
     .addItem('Send tomorrow’s reminders now', 'sendReminders')
-    .addItem('Update craft list (remove pottery etc., add candle making)', 'updateCraftList')
     .addToUi();
 }
 
@@ -532,40 +531,3 @@ function ensure_(ss, name, head) {
   return sh;
 }
 function note_(sh, header, text) { try { sh.getRange(1, colOf_(sh, header)).setNote(text); } catch (e) {} }
-
-/**
- * One-time update: removes Mandala, Madhubani, Pottery, Macramé and Ringaal workshops,
- * adds Candle making, and refreshes the old tagline / About text if you never changed them.
- * Existing bookings are not touched.
- */
-function updateCraftList() {
-  const ss = SpreadsheetApp.getActive();
-  setup(); // makes sure "Candle making" is in the category dropdown
-  const w = ss.getSheetByName(TAB.W);
-  const vals = w.getDataRange().getValues(), head = vals[0].map(String);
-  const iT = head.indexOf('Title'), iC = head.indexOf('Category'), iD = head.indexOf('Description');
-  const removed = [];
-  for (let r = vals.length - 1; r >= 1; r--) {
-    const t = String(vals[r][iT]);
-    if (/mandala|madhubani|pottery|macram|ringaal/i.test(t) || String(vals[r][iC]) === 'Pottery & crafts') { removed.push(t); w.deleteRow(r + 1); }
-    else if (/clay and craft/i.test(String(vals[r][iD]))) w.getRange(r + 1, iD + 1).setValue(String(vals[r][iD]).replace(/,? ?clay and craft/i, ' and craft'));
-  }
-  const hasCandle = w.getDataRange().getValues().slice(1).some(r => String(r[iC]) === 'Candle making');
-  if (!hasCandle) {
-    const tz = tz_(), sat = n => { const d = new Date(); d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7 || 7) + 7 * n); return Utilities.formatDate(d, tz, 'yyyy-MM-dd'); };
-    [[sat(1), '15:00'], [sat(3), '11:00']].forEach(([date, time], k) => appendByHeader_(w, {
-      'ID': 'wcandle' + (k + 1), 'Title': 'Candle Making: Scented Soy Candles', 'Category': 'Candle making', 'Date': date, 'Start time': time,
-      'Duration (min)': 150, 'Seats': 12, 'Price (₹)': 1500, 'Price label': 'per person', 'Level': 'Beginner · Ages 12+',
-      'Description': 'Pour two scented soy candles in glass jars and decorate a pillar candle to take home.', 'Status': 'Open',
-      'Title (Hindi)': 'मोमबत्ती बनाना: खुशबूदार सोया मोमबत्तियाँ' }));
-  }
-  const s = ss.getSheetByName(TAB.S), rows = s.getRange(2, 1, s.getLastRow() - 1, 2).getValues();
-  rows.forEach((r, i) => {
-    const k = String(r[0]).trim(), v = String(r[1]);
-    if (k === 'tagline' && /madhubani|pottery/i.test(v)) s.getRange(i + 2, 2).setValue(NEW_TAGLINE);
-    if (k === 'taglineHi' && /मधुबनी|मिट्टी/.test(v)) s.getRange(i + 2, 2).setValue(NEW_TAGLINE_HI);
-    if (k === 'about' && /madhubani|pottery|mandala/i.test(v)) s.getRange(i + 2, 2).setValue(v
-      .replace(/like Aipan, Madhubani and mandala, alongside texture art, mixed media, pottery and handicrafts\./, 'like Aipan, alongside painting, texture art, mixed media, candle making and block printing.'));
-  });
-  SpreadsheetApp.getActive().toast(`Removed ${removed.length} workshop(s)${hasCandle ? '' : ' and added 2 Candle making workshops'}. Check the dates in Workshops.`, 'Craft list updated', 8);
-}
