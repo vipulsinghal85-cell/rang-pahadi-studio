@@ -138,10 +138,22 @@ function copyChip(text){
   const b = el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:e=>copyText(text,e.currentTarget)},t('copy'));
   return el('span',{class:'copy'}, el('span',null,text), b);
 }
+function track(name, params){ try { if (typeof window.gtag === 'function') window.gtag('event', name, params || {}); } catch {} }
+const TRACK_NAMES = {book:'booking', waitlist:'waitlist_join', voucher:'voucher_order', review:'review_sent', enquiry:'group_enquiry', commission:'custom_art_request'};
 async function api(action, data){
   const res = await fetch(API, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action, ...data})});
-  return res.json();
+  const out = await res.json();
+  if (out && out.ok && TRACK_NAMES[action]) track(TRACK_NAMES[action], action === 'book' ? {value: Number(out.amount)||0, currency:'INR'} : {});
+  return out;
 }
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href]'); if (!a) return;
+  const h = a.getAttribute('href') || '';
+  if (/wa\.me|whatsapp/i.test(h)) track('whatsapp_click', {where: a.id === 'waFloat' ? 'floating_button' : 'page'});
+  else if (/^upi:/i.test(h)) track('upi_open');
+  else if (/instagram\.com/i.test(h)) track('instagram_click');
+  else if (/maps\.google|google\.com\/maps/i.test(h)) track('directions_click');
+}, true);
 function upiLink(amount, note){
   const pa = (S.settings.upi||'').trim(); if (!pa) return null;
   return `upi://pay?pa=${encodeURIComponent(pa)}&pn=${encodeURIComponent(S.settings.upiName || studioName())}` + (amount ? `&am=${Number(amount).toFixed(2)}` : '') + `&cu=INR&tn=${encodeURIComponent(note)}`;
