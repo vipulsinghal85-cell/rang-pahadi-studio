@@ -144,7 +144,7 @@ async function api(action, data){
 }
 function upiLink(amount, note){
   const pa = (S.settings.upi||'').trim(); if (!pa) return null;
-  return `upi://pay?pa=${encodeURIComponent(pa)}&pn=${encodeURIComponent(S.settings.upiName || studioName())}&am=${Number(amount).toFixed(2)}&cu=INR&tn=${encodeURIComponent(note)}`;
+  return `upi://pay?pa=${encodeURIComponent(pa)}&pn=${encodeURIComponent(S.settings.upiName || studioName())}` + (amount ? `&am=${Number(amount).toFixed(2)}` : '') + `&cu=INR&tn=${encodeURIComponent(note)}`;
 }
 function qrSvg(text, size){
   if (typeof window.qrcode !== 'function') return null;
@@ -358,7 +358,17 @@ function gallerySection(){
   return el('section',{class:'block',id:'gallery'},
     el('div',{class:'block-head'}, el('div',null, el('h2',null,t('gallery_h')), el('p',{class:'desc'},t('gallery_sub')))),
     el('div',{class:'gallery'}, S.gallery.map((g,i) => el('button',{type:'button',class:'g-item',onclick:()=>openLightbox(i, S.gallery),'aria-label':cleanCaption(g.caption)||'Photo'},
-      el('img',{src:g.thumb,alt:cleanCaption(g.caption),loading:'lazy'}), g.caption ? el('span',null,cleanCaption(g.caption)) : null))));
+      driveImg(g.thumb,{alt:cleanCaption(g.caption),loading:'lazy'}), g.caption ? el('span',null,cleanCaption(g.caption)) : null))));
+}
+
+/* Google Drive images: if one address fails (new upload, Drive still processing), try the others. */
+function driveImg(src, attrs){
+  const m = String(src||'').match(/[?&]id=([\w-]{20,})/), id = m && m[1];
+  const w = (String(src).match(/sz=w(\d+)/)||[])[1] || '1200';
+  const tries = id ? [`https://lh3.googleusercontent.com/d/${id}=w${w}`, `https://drive.google.com/uc?export=view&id=${id}`] : [];
+  const img = el('img',{...attrs, src, referrerpolicy:'no-referrer'});
+  img.addEventListener('error', () => { const next = tries.shift(); if (next) img.src = next; else img.classList.add('img-failed'); });
+  return img;
 }
 function openLightbox(i, list = S.gallery, isArt = false){
   const g = list[i]; if (!g) return;
@@ -366,7 +376,7 @@ function openLightbox(i, list = S.gallery, isArt = false){
   const info = isArt ? artInfo(g.caption) : {title:cleanCaption(g.caption), price:''};
   const ask = isArt ? waLink(`Hi ${studioName()}! I love the artwork "${info.title || 'from your gallery'}". Is it available? ${g.full}`) : null;
   openModal(el('div',{class:'lightbox',role:'dialog','aria-modal':'true'},
-    el('img',{src:g.full,alt:info.title||''}),
+    driveImg(g.full,{alt:info.title||''}),
     el('div',{class:'lb-bar'}, el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>go(-1),'aria-label':'Previous'},'←'),
       el('span',{class:'lb-cap'}, el('b',null,info.title||''), info.price ? el('span',{class:'art-price'}, info.price) : null),
       el('span',{class:'actions'},
@@ -404,7 +414,7 @@ function artworkSection(){
   return el('section',{class:'block',id:'artwork'}, head,
     el('div',{class:'art-grid'}, S.artworks.map((g,i) => { const a = artInfo(g.caption);
       return el('button',{type:'button',class:'art-item',onclick:()=>openLightbox(i, S.artworks, true),'aria-label':a.title||'Artwork'},
-        el('img',{src:g.thumb,alt:a.title||'',loading:'lazy'}),
+        driveImg(g.thumb,{alt:a.title||'',loading:'lazy'}),
         (a.title || a.price) ? el('span',{class:'art-cap'}, el('span',null, el('b',null,a.title), a.detail ? el('small',null,a.detail) : null), a.price ? el('span',{class:'art-price'},a.price) : null) : null); })),
     ig ? el('a',{class:'ig-strip',href:ig,target:'_blank',rel:'noopener',style:'margin-top:16px'}, igIcon(), el('span',null, S.lang==='hi'?`और कलाकृतियाँ ${igHandle()} पर`:`More work and behind-the-scenes on ${igHandle()}`), el('b',null,'→')) : null);
 }
@@ -432,6 +442,7 @@ function artworkSection(){
 @media (max-width:640px){.cm-steps{grid-template-columns:1fr}}
 `; document.head.append(st); })();
 
+(function(){ if (document.getElementById('upi-css')) return; const st = document.createElement('style'); st.id='upi-css'; st.textContent = `.upi-scan{display:flex;gap:14px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}.upi-scan .qr-box{flex:none;background:#fff;border-radius:12px;padding:6px;border:1px solid var(--line)}.upi-scan b{display:block;font-size:15px}.upi-scan small{display:block;margin:4px 0 8px;line-height:1.4}.upi-open{display:none}@media (hover:none) and (pointer:coarse){.upi-open{display:inline-flex}}`; document.head.append(st); })();
 /* ------------------------------------------- "Paint something for me" */
 function commissionsOpen(){ return !/^(no|off|false|0)$/i.test(String(S.settings.commissions||'yes').trim()); }
 const CM = {
@@ -581,7 +592,14 @@ function visitPanel(st){
       st.hours ? el('li',{class:'row'}, el('span',{class:'meta'},t('hours')), el('span',null,st.hours)) : null,
       waNumber() ? el('li',{class:'row'}, el('span',{class:'meta'},'WhatsApp'), copyChip(digits(st.whatsapp||CFG.WHATSAPP))) : null,
       st.email ? el('li',{class:'row'}, el('span',{class:'meta'},t('email')), copyChip(st.email)) : null,
-      st.upi ? el('li',{class:'row'}, el('span',{class:'meta'},t('upi')), copyChip(st.upi)) : null),
+      st.upi ? el('li',{class:'row'}, el('span',{class:'meta'},t('upi')), copyChip(st.upi)) : null,
+      st.upi ? (() => { const link = upiLink(0, studioName()), hi = S.lang==='hi';
+        return el('li',{class:'upi-scan'},
+          qrSvg(link, 150),
+          el('div',null,
+            el('b',null, hi?'स्कैन करके भुगतान करें':'Scan to pay'),
+            el('small',{class:'meta'}, hi?'किसी भी UPI ऐप से: GPay, PhonePe, Paytm, BHIM। बुकिंग के बाद सही रकम वाला QR भी दिखता है।':'Works with any UPI app: GPay, PhonePe, Paytm, BHIM. After you book, you also get a QR with the exact amount.'),
+            el('a',{class:'btn btn-ghost btn-sm upi-open',href:link}, hi?'UPI ऐप में खोलें':'Open in UPI app'))); })() : null),
     st.address ? el('div',{class:'map'}, el('iframe',{title:'Map',loading:'lazy',referrerpolicy:'no-referrer-when-downgrade',src:'https://www.google.com/maps?q='+encodeURIComponent(st.address)+'&output=embed'})) : null,
     dir ? el('a',{class:'btn btn-ghost',href:dir,target:'_blank',rel:'noopener',style:'margin-top:12px'},'📍 '+t('directions')) : null);
 }
