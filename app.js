@@ -423,19 +423,38 @@ function driveImg(src, attrs){
 }
 function openLightbox(i, list = S.gallery, isArt = false){
   const g = list[i]; if (!g) return;
-  const go = d => openLightbox((i + d + list.length) % list.length, list, isArt);
-  const info = isArt ? artInfo(g.caption) : {title:cleanCaption(g.caption), price:''};
-  const ask = isArt ? waLink(`Hi ${studioName()}! I love the artwork "${info.title || 'from your gallery'}". Is it available? ${g.full}`) : null;
-  openModal(el('div',{class:'lightbox',role:'dialog','aria-modal':'true'},
+  const hi = S.lang==='hi', n = list.length;
+  const go = d => openLightbox((i + d + n) % n, list, isArt);
+  const info = isArt ? artInfo(g.caption) : {title:cleanCaption(g.caption), price:'', detail:''};
+  const sold = isArt && /^(sold|बिक गया)$/i.test(info.price);
+  const ask = isArt && !sold ? waLink(`Hi ${studioName()}! I love the artwork "${info.title || 'from your gallery'}". Is it available? ${g.full}`) : null;
+  const stage = el('div',{class:'lb-stage'},
     driveImg(g.full,{alt:info.title||''}),
-    el('div',{class:'lb-bar'}, el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>go(-1),'aria-label':'Previous'},'←'),
-      el('span',{class:'lb-cap'}, el('b',null,info.title||''), info.price ? el('span',{class:'art-price'}, info.price) : null),
-      el('span',{class:'actions'},
-        ask ? el('a',{class:'btn btn-primary btn-sm',href:ask,target:'_blank',rel:'noopener'}, info.price ? (S.lang==='hi'?'खरीदने के लिए पूछें':'Ask to buy') : (S.lang==='hi'?'इसके बारे में पूछें':'Ask about this piece')) : null,
-        isArt && commissionsOpen() ? el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>openCommission(info.title)}, S.lang==='hi'?'ऐसी ही बनवाएँ':'Make one like this') : null,
-        el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>go(1),'aria-label':'Next'},'→'),
-        el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:closeModal},t('close'))))), 'wide');
+    n > 1 ? el('button',{type:'button',class:'lb-nav lb-prev',onclick:()=>go(-1),'aria-label':'Previous'},'‹') : null,
+    n > 1 ? el('button',{type:'button',class:'lb-nav lb-next',onclick:()=>go(1),'aria-label':'Next'},'›') : null,
+    el('button',{type:'button',class:'lb-x',onclick:closeModal,'aria-label':t('close')},'×'));
+  let x0 = null;
+  stage.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, {passive:true});
+  stage.addEventListener('touchend', e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 45 && n > 1) go(dx < 0 ? 1 : -1); }, {passive:true});
+  openModal(el('div',{class:'lightbox lb-v2',role:'dialog','aria-modal':'true','data-lb':'1'},
+    stage,
+    el('div',{class:'lb-info'},
+      el('div',{class:'lb-text'},
+        el('div',{class:'lb-count'}, `${i+1} / ${n}`),
+        info.title ? el('h3',null,info.title) : null,
+        info.detail ? el('p',null,info.detail) : null),
+      el('div',{class:'lb-side'},
+        info.price ? el('span',{class:'art-price'+(sold?' is-sold':'')}, info.price) : null,
+        el('div',{class:'actions'},
+          ask ? el('a',{class:'btn btn-primary btn-sm',href:ask,target:'_blank',rel:'noopener'}, info.price ? (hi?'खरीदने के लिए पूछें':'Ask to buy') : (hi?'इसके बारे में पूछें':'Ask about this piece')) : null,
+          isArt && commissionsOpen() ? el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>openCommission(info.title)}, hi?'ऐसी ही बनवाएँ':'Make one like this') : null)))), 'wide lb-overlay');
+  lbGo = n > 1 ? go : null;
 }
+let lbGo = null;
+document.addEventListener('keydown', e => {
+  if (!lbGo || !document.querySelector('[data-lb]')) return;
+  if (e.key === 'ArrowRight') lbGo(1); else if (e.key === 'ArrowLeft') lbGo(-1);
+});
 
 /* ----------------------------------------------- artist's own artwork */
 function igHandle(){ const v = String(S.settings.instagram||'').trim(); if (!v) return ''; const m = v.match(/instagram\.com\/([A-Za-z0-9._]+)/i); return '@' + (m ? m[1] : v.replace(/^@/,'')); }
@@ -451,24 +470,124 @@ function artInfo(caption){
   const price = pi >= 0 ? parts.splice(pi,1)[0].replace(/^rs\.?\s*/i,'₹') : '';
   return { title: parts[0] || '', detail: parts.slice(1).join(' · '), price: /^sold$/i.test(price) ? (S.lang==='hi'?'बिक गया':'Sold') : price };
 }
+/* Groups artwork by words in its title, so no extra sheet column is needed. */
+const ART_KINDS = [
+  {key:'folk',  en:'Aipan & folk',   hi:'ऐपण और लोक कला', re:/aipan|ऐपण|plate|warli|tribal|mughal|madhubani|gond|folk|mandala|kumaon|pichwai|lippan/i},
+  {key:'decor', en:'Bottles & décor', hi:'बोतल और सजावट', re:/bottle|vase|jar|name ?plate|nameplate|mask|decor|lamp|diya|tray|box|coaster|frame|kettle/i},
+  {key:'candle',en:'Candles',        hi:'कैंडल',          re:/candle|wax/i},
+  {key:'paint', en:'Paintings',      hi:'पेंटिंग',        re:/./}
+];
+function artKind(title){ return (ART_KINDS.find(k => k.re.test(title||'')) || ART_KINDS[3]).key; }
+let artFilter = 'all';
 function artworkSection(){
-  const ig = igUrl(), artist = S.settings.artistName || '';
+  const ig = igUrl(), artist = S.settings.artistName || '', hi = S.lang==='hi';
   if (!S.artworks.length && !ig) return null;
-  const head = el('div',{class:'block-head'},
+  const head = el('div',{class:'block-head art-head'},
     el('div',null,
-      el('div',{class:'eyebrow',style:'color:var(--geru);opacity:1'}, S.lang==='hi'?'गैलरी':'Gallery'),
-      el('h2',null, artist ? (S.lang==='hi' ? `${artist} की कलाकृतियाँ` : `Artwork by ${artist}`) : (S.lang==='hi'?'हमारी कलाकृतियाँ':'Our artwork')),
-      el('p',{class:'desc'}, S.lang==='hi'?'पेंटिंग, ऐपण, कैंडल और हस्तनिर्मित कृतियाँ। किसी भी तस्वीर पर टैप करके बड़ा देखें या खरीदने के लिए पूछें।':'Paintings, Aipan, candles and handmade pieces. Tap any piece to see it large or ask about buying it.')),
+      el('div',{class:'eyebrow',style:'color:var(--geru);opacity:1'}, hi?'गैलरी':'Gallery'),
+      el('h2',null, artist ? (hi ? `${artist} की कलाकृतियाँ` : `Artwork by ${artist}`) : (hi?'हमारी कलाकृतियाँ':'Our artwork')),
+      el('p',{class:'desc'}, hi?'पेंटिंग, ऐपण, कैंडल और हस्तनिर्मित कृतियाँ। किसी भी तस्वीर पर टैप करके बड़ा देखें या खरीदने के लिए पूछें।':'Paintings, Aipan, candles and handmade pieces. Tap any piece to see it large or ask about buying it.')),
     ig ? el('a',{class:'btn btn-ghost ig-btn',href:ig,target:'_blank',rel:'noopener'}, igIcon(), ' ', igHandle()) : null);
   if (!S.artworks.length) return el('section',{class:'block',id:'artwork'}, head,
-    el('a',{class:'ig-strip',href:ig,target:'_blank',rel:'noopener'}, igIcon(), el('span',null, S.lang==='hi'?'नई कलाकृतियाँ और कार्यशालाओं की झलक Instagram पर देखें':'See the latest artwork and workshop moments on Instagram'), el('b',null,'→')));
-  return el('section',{class:'block',id:'artwork'}, head,
-    el('div',{class:'art-grid'}, S.artworks.map((g,i) => { const a = artInfo(g.caption);
-      return el('button',{type:'button',class:'art-item',onclick:()=>openLightbox(i, S.artworks, true),'aria-label':a.title||'Artwork'},
-        driveImg(g.thumb,{alt:a.title||'',loading:'lazy'}),
-        (a.title || a.price) ? el('span',{class:'art-cap'}, el('span',null, el('b',null,a.title), a.detail ? el('small',null,a.detail) : null), a.price ? el('span',{class:'art-price'},a.price) : null) : null); })),
-    ig ? el('a',{class:'ig-strip',href:ig,target:'_blank',rel:'noopener',style:'margin-top:16px'}, igIcon(), el('span',null, S.lang==='hi'?`और कलाकृतियाँ ${igHandle()} पर`:`More work and behind-the-scenes on ${igHandle()}`), el('b',null,'→')) : null);
+    el('a',{class:'ig-strip',href:ig,target:'_blank',rel:'noopener'}, igIcon(), el('span',null, hi?'नई कलाकृतियाँ और कार्यशालाओं की झलक Instagram पर देखें':'See the latest artwork and workshop moments on Instagram'), el('b',null,'→')));
+
+  const items = S.artworks.map((g,i) => { const a = artInfo(g.caption); return {g, i, a, kind: artKind(a.title + ' ' + a.detail)}; });
+  const kinds = ART_KINDS.filter(k => items.some(x => x.kind === k.key));
+  if (!kinds.some(k => k.key === artFilter)) artFilter = 'all';
+  const grid = el('div',{class:'art-grid'});
+  const chips = kinds.length > 1 ? el('div',{class:'art-filters',role:'group','aria-label':hi?'कलाकृति का प्रकार':'Type of artwork'},
+    [{key:'all', en:'All', hi:'सभी'}, ...kinds].map(k => el('button',{type:'button',class:'chip art-chip','aria-pressed':String(artFilter===k.key),
+      onclick:e => { artFilter = k.key; e.currentTarget.parentNode.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b===e.currentTarget))); fill(); }},
+      hi ? k.hi : k.en, el('small',null, String(k.key==='all' ? items.length : items.filter(x => x.kind===k.key).length))))) : null;
+
+  function fill(){
+    const shown = items.filter(x => artFilter==='all' || x.kind===artFilter);
+    const list = shown.map(x => x.g);
+    grid.replaceChildren(...shown.map((x, j) => {
+      const a = x.a, sold = /^(sold|बिक गया)$/i.test(a.price);
+      return el('button',{type:'button',class:'art-item'+(sold?' is-sold':''),style:`--d:${Math.min(j,8)*60}ms`,onclick:()=>openLightbox(j, list, true),'aria-label':a.title||'Artwork'},
+        el('span',{class:'art-frame'}, driveImg(x.g.thumb,{alt:a.title||'',loading:'lazy'}),
+          sold ? el('span',{class:'art-ribbon'}, a.price) : null,
+          el('span',{class:'art-zoom','aria-hidden':'true',html:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5M11 8v6M8 11h6"/></svg>'})),
+        (a.title || a.price) ? el('span',{class:'art-label'},
+          el('span',{class:'art-name'}, el('b',null,a.title), a.detail ? el('small',null,a.detail) : null),
+          a.price && !sold ? el('span',{class:'art-price'},a.price) : null) : null);
+    }));
+    revealArt(grid);
+  }
+  fill();
+  return el('section',{class:'block art-block',id:'artwork'}, head, chips, grid,
+    ig ? el('a',{class:'ig-strip',href:ig,target:'_blank',rel:'noopener',style:'margin-top:20px'}, igIcon(), el('span',null, hi?`और कलाकृतियाँ ${igHandle()} पर`:`More work and behind-the-scenes on ${igHandle()}`), el('b',null,'→')) : null);
 }
+function revealArt(root){
+  const cards = root.querySelectorAll('.art-item');
+  if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) { cards.forEach(c => c.classList.add('in')); return; }
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), {rootMargin:'0px 0px -40px 0px'});
+  cards.forEach(c => io.observe(c));
+}
+/* gallery styles (kept here so only app.js needs updating) */
+(function(){ if (document.getElementById('art-css')) return; const st = document.createElement('style'); st.id = 'art-css'; st.textContent = `
+.art-block{position:relative}
+.ig-strip span{text-align:left}
+.art-block::before{content:"";position:absolute;inset:-8px -4px auto;height:6px;border-radius:6px;opacity:.55;background:radial-gradient(circle,var(--geru) 1.6px,transparent 2.2px) 0 50%/14px 6px repeat-x}
+.art-filters{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 18px}
+.art-chip{display:inline-flex;align-items:center;gap:7px}
+.art-chip small{font-size:11px;font-weight:700;opacity:.7;background:rgba(0,0,0,.06);border-radius:99px;padding:1px 7px}
+.art-chip[aria-pressed="true"] small{background:rgba(155,58,34,.14);opacity:1}
+.art-grid{columns:3 250px;column-gap:20px}
+.art-item{display:block;width:100%;break-inside:avoid;margin:0 0 22px;padding:10px 10px 0;border:1px solid var(--line);border-radius:6px;background:var(--surface);cursor:zoom-in;text-align:left;color:var(--ink);font:inherit;
+  box-shadow:0 1px 2px rgba(40,20,10,.05),0 10px 24px -12px rgba(60,30,10,.28);transition:transform .35s ease,box-shadow .35s ease,opacity .6s ease;transition-delay:0s,0s,var(--d,0ms)}
+.art-item:not(.in){opacity:0;transform:translateY(14px)}
+.art-item.in:hover{transform:translateY(-4px);box-shadow:0 2px 4px rgba(40,20,10,.06),0 18px 34px -14px rgba(60,30,10,.4)}
+.art-item:focus-visible{outline:3px solid var(--geru);outline-offset:3px}
+.art-frame{position:relative;display:block;overflow:hidden;border-radius:2px;background:#efe9e1;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
+.art-frame img{display:block;width:100%;height:auto;transition:transform .7s ease}
+.art-item:hover .art-frame img{transform:scale(1.04)}
+.art-zoom{position:absolute;right:10px;top:10px;width:32px;height:32px;display:grid;place-items:center;border-radius:99px;background:rgba(255,250,242,.92);color:var(--geru);opacity:0;transform:scale(.8);transition:.25s}
+.art-item:hover .art-zoom,.art-item:focus-visible .art-zoom{opacity:1;transform:none}
+.art-ribbon{position:absolute;left:10px;top:10px;background:var(--ink);color:var(--paper);font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:3px}
+.art-item.is-sold .art-frame img{filter:saturate(.85)}
+.art-label{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:12px 4px 13px}
+.art-name{min-width:0}
+.art-name b{display:block;font-family:var(--display);font-size:16px;font-weight:600;line-height:1.25}
+.art-name small{display:block;font-size:12.5px;color:var(--muted);margin-top:3px}
+.art-price{flex:none;background:var(--geru-soft);color:var(--geru);font-weight:800;font-size:13px;border-radius:99px;padding:4px 11px;white-space:nowrap}
+.art-price.is-sold{background:var(--ink);color:var(--paper)}
+@media (max-width:720px){
+  .art-grid{columns:2;column-gap:12px}
+  .art-item{padding:6px 6px 0;margin-bottom:12px}
+  .art-label{flex-direction:column;gap:6px;padding:9px 2px 10px}
+  .art-name b{font-size:14px}
+  .art-name small{font-size:11.5px}
+  .art-price{font-size:12px;padding:3px 9px}
+  .art-filters{flex-wrap:nowrap;overflow-x:auto;margin-inline:-16px;padding:2px 16px 4px;scrollbar-width:none}
+  .art-filters::-webkit-scrollbar{display:none}
+  .art-chip{flex:none}
+}
+.overlay.lb-overlay{background:rgba(14,10,8,.88)}
+.lightbox.lb-v2{background:var(--surface);border-radius:14px;overflow:hidden;max-width:960px}
+.lb-stage{position:relative;background:#0f0c0a;display:grid;place-items:center;touch-action:pan-y}
+.lightbox.lb-v2 .lb-stage img{display:block;max-width:100%;width:auto;max-height:76vh;object-fit:contain;margin:0 auto;background:transparent}
+.lb-nav,.lb-x{position:absolute;border:0;cursor:pointer;display:grid;place-items:center;color:#fff;background:rgba(20,14,10,.42);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);transition:background .2s}
+.lb-nav:hover,.lb-x:hover{background:rgba(20,14,10,.62)}
+.lb-nav{top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:99px;font-size:28px;line-height:1;padding-bottom:3px}
+.lb-prev{left:12px}.lb-next{right:12px}
+.lb-x{right:12px;top:12px;width:38px;height:38px;border-radius:99px;font-size:24px;line-height:1;padding-bottom:2px}
+.lb-info{display:flex;justify-content:space-between;align-items:flex-end;gap:14px 20px;padding:16px 20px 18px;flex-wrap:wrap}
+.lb-text{min-width:0;flex:1 1 240px}
+.lb-count{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--muted)}
+.lb-text h3{font-family:var(--display);font-size:21px;font-weight:600;margin:2px 0 0;line-height:1.25}
+.lb-text p{margin:4px 0 0;color:var(--muted);font-size:14px}
+.lb-side{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.lb-side .actions{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:720px){
+  .lb-nav{width:38px;height:38px;font-size:24px}
+  .lb-prev{left:6px}.lb-next{right:6px}
+  .lb-info{padding:14px 16px 16px}
+  .lb-text h3{font-size:18px}
+}
+@media (prefers-reduced-motion: reduce){.art-item,.art-frame img,.art-zoom{transition:none}.art-item:not(.in){opacity:1;transform:none}}
+`; document.head.append(st); })();
 
 /* styles for the commission section (kept here so only app.js needs updating) */
 (function(){ if (document.getElementById('cm-css')) return; const st = document.createElement('style'); st.id = 'cm-css'; st.textContent = `.commission{position:relative;overflow:hidden;background:#2f5240;color:#fff;border-radius:24px;padding:clamp(22px,4vw,40px)}
