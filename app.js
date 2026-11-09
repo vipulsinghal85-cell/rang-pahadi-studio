@@ -1078,17 +1078,20 @@ function festivalBanner(){
 let lastLD = '';
 function updateStructuredData(){
   const st = S.settings, base = siteUrl();
-  const place = {'@type':'Place', name:studioName(), address: st.address || 'Dehradun, Uttarakhand, India'};
+  const addr = {'@type':'PostalAddress', streetAddress: st.address || 'Dehradun', addressLocality:'Dehradun', addressRegion:'Uttarakhand', postalCode: (String(st.address||'').match(/\b\d{6}\b/)||[''])[0] || undefined, addressCountry:'IN'};
+  const place = {'@type':'Place', name:studioName(), address: addr};
+  const performer = {'@type':'Person', name: st.artistName || 'Akanksha Singhal'};
+  const validFrom = new Date(Date.now() - 864e5).toISOString().slice(0,10) + 'T00:00:00+05:30';
   const logo = new URL('logo-512.png', base).href;
   const events = upcoming().filter(w => w.status!=='cancelled').slice(0,20).map(w => {
     const [h,m] = w.start.split(':').map(Number), end = h*60+m+(w.durationMins||120);
     return {'@type':'Event', name:w.title, description:w.description || `${w.category} workshop at ${studioName()}`,
       startDate:`${w.date}T${w.start}:00+05:30`, endDate:`${w.date}T${String(Math.floor(end/60)).padStart(2,'0')}:${String(end%60).padStart(2,'0')}:00+05:30`,
       eventStatus:'https://schema.org/EventScheduled', eventAttendanceMode:'https://schema.org/OfflineEventAttendanceMode',
-      location:place, image:[w.photo || logo], organizer:{'@type':'Organization', name:studioName(), url:base},
-      offers:{'@type':'Offer', price:String(w.price), priceCurrency:'INR', url:base+'#calendar', availability: seatsLeft(w)>0 ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut'}};
+      location:place, image:[w.photo || logo], performer, organizer:{'@type':'Organization', name:studioName(), url:base},
+      offers:{'@type':'Offer', price:String(w.price), priceCurrency:'INR', url:base+'#calendar', validFrom, availability: seatsLeft(w)>0 ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut'}};
   });
-  const data = [{'@context':'https://schema.org','@type':'LocalBusiness', name:studioName(), image:logo, url:base, address:place.address, telephone:waNumber() ? '+'+waNumber() : undefined},
+  const data = [{'@context':'https://schema.org','@type':'LocalBusiness', name:studioName(), image:logo, url:base, address:addr, telephone:waNumber() ? '+'+waNumber() : undefined},
                 ...events.map(e => ({'@context':'https://schema.org', ...e}))];
   data.push({'@context':'https://schema.org','@type':'FAQPage', mainEntity: faqItems(st).map(([q,a]) => ({'@type':'Question', name:q, acceptedAnswer:{'@type':'Answer', text:a}}))});
   const json = JSON.stringify(data);
