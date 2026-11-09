@@ -321,7 +321,46 @@ function render(){
   ].filter(Boolean));
   updateStructuredData();
   waButton();
+  setupCollapsible();
 }
+
+/* ---- collapsible sections on phones: shorter page, tap "Show" to open */
+const COLLAPSE = ['gallery','try-aipan','reviews','gift','faq'];
+const openSecs = new Set();
+const phone = () => window.matchMedia('(max-width: 720px)').matches;
+function setupCollapsible(){
+  const hi = S.lang==='hi', mobile = phone();
+  COLLAPSE.forEach(id => {
+    const sec = document.getElementById(id); if (!sec) return;
+    const head = sec.querySelector(':scope > .block-head, :scope > .ap-text');
+    if (!head) return;
+    let btn = sec.querySelector('.cl-toggle');
+    if (!mobile) { sec.classList.remove('collapsible','is-collapsed'); if (btn) btn.remove(); return; }
+    const open = openSecs.has(id);
+    sec.classList.add('collapsible'); sec.classList.toggle('is-collapsed', !open);
+    if (!btn) {
+      btn = el('button',{type:'button',class:'cl-toggle','aria-controls':id});
+      btn.addEventListener('click', () => { openSecs.has(id) ? openSecs.delete(id) : openSecs.add(id); setupCollapsible(); if (!openSecs.has(id)) sec.scrollIntoView({block:'start'}); });
+      const after = head.querySelector(':scope > .desc');
+      if (head.classList.contains('ap-text') && after) after.after(btn); else head.append(btn);
+    }
+    btn.setAttribute('aria-expanded', String(open));
+    btn.replaceChildren(el('span',null, open ? (hi?'कम दिखाएँ':'Show less') : (hi?'देखें':'Show')), el('span',{class:'cl-chev','aria-hidden':'true'}, open ? '▴' : '▾'));
+  });
+}
+function openSection(id){ if (COLLAPSE.includes(id) && !openSecs.has(id)) { openSecs.add(id); setupCollapsible(); } }
+document.addEventListener('click', e => { const a = e.target.closest && e.target.closest('a[href^="#"]'); if (a) openSection(a.getAttribute('href').slice(1)); }, true);
+window.addEventListener('hashchange', () => openSection(location.hash.slice(1)));
+if (location.hash) openSection(location.hash.slice(1));
+let rsT; window.addEventListener('resize', () => { clearTimeout(rsT); rsT = setTimeout(setupCollapsible, 200); });
+(function(){ const st = document.createElement('style'); st.textContent = `
+.collapsible.is-collapsed > :not(.block-head):not(.ap-text){display:none!important}
+.aipan.is-collapsed .ap-text > :not(.eyebrow):not(h2):not(.desc):not(.cl-toggle){display:none!important}
+.collapsible.is-collapsed .block-head{margin-bottom:0}
+.cl-toggle{display:inline-flex;align-items:center;gap:6px;margin-top:10px;min-height:40px;padding:8px 16px;border-radius:999px;border:1.5px solid var(--geru);background:var(--surface);color:var(--geru);font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+.cl-toggle:hover{background:var(--geru-soft)}
+.cl-chev{font-size:12px}
+.collapsible .block-head{flex-wrap:wrap}`; document.head.append(st); })();
 
 function seatMeter(w){
   const left = seatsLeft(w), total = Number(w.seats)||0, pct = total ? Math.round((total-left)/total*100) : 0;
