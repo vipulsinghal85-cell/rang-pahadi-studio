@@ -9,7 +9,12 @@
 <meta property="og:description" content="Aipan, painting, texture art, candle making, block printing and kids' classes. Book a seat online.">
 <meta name="theme-color" content="#9b3a22">
 <link rel="icon" type="image/png" href="favicon-64.png">
-<link rel="apple-touch-icon" href="logo-192.png">
+<link rel="apple-touch-icon" href="icon-maskable-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rang Pahadi">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="canonical" href="https://rangpahadistudio.in/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://rangpahadistudio.in/">
@@ -76,5 +81,33 @@
 <script src="config.js"></script>
 <script src="qrcode.js"></script>
 <script src="app.js"></script>
+<!-- App: install button and offline support -->
+<style>#rp-install{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:60;display:flex;align-items:center;gap:12px;max-width:440px;margin:0 auto;padding:12px 14px;border-radius:16px;background:#2f5240;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.25);font:500 14px/1.35 "Hanken Grotesk",system-ui,sans-serif}
+#rp-install img{width:40px;height:40px;border-radius:10px;background:#fbf5ef}#rp-install span{flex:1}#rp-install b{display:block;font-size:15px}
+#rp-install button{border:0;border-radius:99px;padding:8px 14px;font:700 13px "Hanken Grotesk",system-ui,sans-serif;cursor:pointer}#rp-install .go{background:#fff;color:#2f5240}#rp-install .no{background:transparent;color:#fff;opacity:.8;padding:8px}</style>
+<script>
+(function(){
+  if ('serviceWorker' in navigator) window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+  var standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  function seen(){ try { return localStorage.getItem('rp-install-dismissed') === '1'; } catch(e){ return false; } }
+  function hide(b, remember){ b.remove(); if (remember) try { localStorage.setItem('rp-install-dismissed','1'); } catch(e){} }
+  function banner(text, onGo){
+    if (standalone || seen() || document.getElementById('rp-install')) return;
+    var b = document.createElement('div'); b.id = 'rp-install'; b.setAttribute('role','dialog'); b.setAttribute('aria-label','Install the app');
+    b.innerHTML = '<img src="icon-maskable-192.png" alt=""><span><b>Get the Rang Pahadi app</b>' + text + '</span>' + (onGo ? '<button class="go" type="button">Install</button>' : '') + '<button class="no" type="button" aria-label="Not now">✕</button>';
+    if (onGo) b.querySelector('.go').onclick = function(){ onGo(); hide(b, false); };
+    b.querySelector('.no').onclick = function(){ hide(b, true); };
+    document.body.appendChild(b);
+    if (window.gtag) gtag('event','app_banner_shown');
+  }
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault(); var ev = e;
+    setTimeout(function(){ banner('Workshops and your bookings, one tap away.', function(){ ev.prompt(); ev.userChoice.then(function(c){ if (window.gtag) gtag('event','app_install_' + c.outcome); }); }); }, 8000);
+  });
+  window.addEventListener('appinstalled', function(){ if (window.gtag) gtag('event','app_installed'); });
+  var iOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+  if (iOS && !standalone) setTimeout(function(){ banner('Tap the Share button, then “Add to Home Screen”.'); }, 12000);
+})();
+</script>
 </body>
 </html>

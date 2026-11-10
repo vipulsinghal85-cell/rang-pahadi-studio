@@ -1,0 +1,25 @@
+{
+  "name": "Rang Pahadi Studio",
+  "short_name": "Rang Pahadi",
+  "description": "Art workshops in Dehradun: Aipan, painting, texture art, candles and kids' classes. Book a seat, see the gallery, order a custom painting.",
+  "id": "/",
+  "start_url": "/?source=app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fbfaf7",
+  "theme_color": "#9b3a22",
+  "lang": "en-IN",
+  "categories": ["education", "lifestyle", "shopping"],
+  "icons": [
+    { "src": "logo-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "logo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Workshops", "url": "/?source=app#calendar", "icons": [{ "src": "logo-192.png", "sizes": "192x192" }] },
+    { "name": "Paint for me", "url": "/?source=app#commission", "icons": [{ "src": "logo-192.png", "sizes": "192x192" }] },
+    { "name": "Gallery", "url": "/?source=app#artwork", "icons": [{ "src": "logo-192.png", "sizes": "192x192" }] }
+  ]
+}
