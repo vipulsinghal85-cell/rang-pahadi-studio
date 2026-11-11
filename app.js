@@ -301,9 +301,10 @@ function render(){
     hero, marquee,
     el('main',{class:'wrap',id:'calendar'},
       notice,
-      el('div',{class:'section-head'}, el('h2',null,t('upcoming')),
-        el('button',{type:'button',class:'quiz-link',onclick:openQuiz}, t('not_sure'),' ', el('b',null,t('find_btn')+' →'))),
-      chips, grid,
+      el('section',{class:'block wk-block',id:'workshops'},
+        el('div',{class:'section-head'}, el('h2',null,t('upcoming')),
+          el('button',{type:'button',class:'quiz-link',onclick:openQuiz}, t('not_sure'),' ', el('b',null,t('find_btn')+' →'))),
+        chips, grid),
       artworkSection(),
       commissionSection(),
       gallerySection(),
@@ -322,6 +323,83 @@ function render(){
   updateStructuredData();
   waButton();
   setupCollapsible();
+  addBlobs();
+}
+
+
+/* ===== colour pass: brighter sections, paint splashes, playful details (kept here so only app.js needs updating) ===== */
+(function(){ if (document.getElementById('colour-css')) return; const st = document.createElement('style'); st.id = 'colour-css'; st.textContent = `
+:root{--marigold:#e3a127;--rhodo:#c8456a;--sky:#3b78a8;--teal:#23877c;--lav:#7357a4;--turmeric:#f0c43c}
+html,body{overflow-x:clip}
+/* full-width colour washes behind alternate sections */
+.wk-block,#try-aipan,#reviews,#faq,#about{position:relative;isolation:isolate;padding-block:46px 50px}
+.wk-block{margin-top:0;padding-top:30px}
+.wk-block::before,#try-aipan::before,#reviews::before,#faq::before,#about::before{content:"";position:absolute;top:0;bottom:0;left:calc(50% - 50vw);right:calc(50% - 50vw);z-index:-2;background:var(--wash)}
+.wk-block{--wash:rgba(227,161,39,.16);--accent:var(--marigold)}
+#artwork{--accent:var(--rhodo)}
+#try-aipan{--wash:rgba(59,120,168,.14);--accent:var(--sky)}
+#reviews{--wash:rgba(200,69,106,.12);--accent:var(--rhodo)}
+#gift{--accent:var(--marigold)}
+#faq{--wash:rgba(35,135,124,.14);--accent:var(--teal)}
+#about{--wash:rgba(115,87,164,.13);--accent:var(--lav);margin-top:64px}
+/* paint speckles on the workshop wash */
+.wk-block::after,#try-aipan::after,#reviews::after,#faq::after,#about::after{content:"";position:absolute;top:0;bottom:0;left:calc(50% - 50vw);right:calc(50% - 50vw);z-index:-1;pointer-events:none;opacity:.55;
+  background:
+   radial-gradient(circle at 12% 18%,var(--rhodo) 0 4px,transparent 5px),radial-gradient(circle at 88% 10%,var(--sky) 0 6px,transparent 7px),
+   radial-gradient(circle at 94% 46%,var(--teal) 0 3px,transparent 4px),radial-gradient(circle at 4% 62%,var(--marigold) 0 7px,transparent 8px),
+   radial-gradient(circle at 70% 96%,var(--lav) 0 5px,transparent 6px),radial-gradient(circle at 30% 98%,var(--turmeric) 0 6px,transparent 7px)}
+/* hand-drawn underline under section headings */
+.section-head h2,.block-head h2,#reviews h2,#faq h2,#gift h2{position:relative;display:inline-block;padding-bottom:10px}
+.section-head h2::after,.block-head h2::after,#about h2::after{content:"";position:absolute;left:0;bottom:-2px;width:min(180px,70%);height:12px;background:var(--accent,var(--geru));
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 12'%3E%3Cpath d='M2 8c20-6 38-6 58-2s40 5 60 0 38-5 58 0' fill='none' stroke='black' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat 0 0/100% 100%;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 12'%3E%3Cpath d='M2 8c20-6 38-6 58-2s40 5 60 0 38-5 58 0' fill='none' stroke='black' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat 0 0/100% 100%}
+#about h2{position:relative;padding-bottom:14px}
+/* floating paint blobs */
+.wk-block .rp-blob,#try-aipan .rp-blob,#faq .rp-blob,#about .rp-blob,#reviews .rp-blob{display:block}
+.rp-blob{display:none;position:absolute;z-index:-1;pointer-events:none;width:220px;height:220px;background:var(--c);opacity:.28;
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cpath d='M41 -4C59 10 82 24 89 46S83 95 63 108 12 121-12 113-61 84-74 60-87 4-68-14-18-21 41-4Z' transform='translate(100 90)'/%3E%3Ccircle cx='170' cy='170' r='12'/%3E%3Ccircle cx='28' cy='178' r='7'/%3E%3C/svg%3E") no-repeat center/contain;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cpath d='M41 -4C59 10 82 24 89 46S83 95 63 108 12 121-12 113-61 84-74 60-87 4-68-14-18-21 41-4Z' transform='translate(100 90)'/%3E%3Ccircle cx='170' cy='170' r='12'/%3E%3Ccircle cx='28' cy='178' r='7'/%3E%3C/svg%3E") no-repeat center/contain}
+.rp-blob.r{right:-90px;top:-40px}.rp-blob.l{left:-110px;bottom:-30px;width:180px;height:180px;transform:rotate(140deg)}
+@media (prefers-reduced-motion:no-preference){.rp-blob{animation:rpfloat 9s ease-in-out infinite alternate}.rp-blob.l{animation-duration:11s}}
+@keyframes rpfloat{from{translate:0 0;rotate:0deg}to{translate:10px -14px;rotate:8deg}}
+/* confetti of paint dots on the hero */
+.band::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.85;
+  background:
+   radial-gradient(circle at 6% 30%,#f0c43c 0 6px,transparent 7px),radial-gradient(circle at 46% 12%,#ffb8c8 0 4px,transparent 5px),
+   radial-gradient(circle at 54% 78%,#b5dcff 0 5px,transparent 6px),radial-gradient(circle at 92% 86%,#f0c43c 0 7px,transparent 8px),
+   radial-gradient(circle at 63% 30%,#8fd3c3 0 3px,transparent 4px),radial-gradient(circle at 30% 92%,#ffb8c8 0 6px,transparent 7px),
+   radial-gradient(circle at 97% 20%,#b5dcff 0 4px,transparent 5px),radial-gradient(circle at 38% 48%,#f0c43c 0 3px,transparent 4px)}
+.band .hero{position:relative;z-index:1}
+/* colourful craft strip */
+.marquee span:nth-child(4n+1){color:#ffd27a}.marquee span:nth-child(4n+2){color:#ffb8c8}.marquee span:nth-child(4n+3){color:#b5dcff}.marquee span:nth-child(4n+4){color:#fbf5ef}
+/* workshop cards: lift with their own colour */
+.card{transition:transform .25s ease,box-shadow .25s ease}
+.card:hover{transform:translateY(-4px);box-shadow:0 18px 34px -16px color-mix(in srgb,var(--band,#9b3a22) 70%,transparent)}
+.card .date{background:color-mix(in srgb,var(--band,#9b3a22) 14%,var(--surface));color:var(--band,var(--geru))}
+.wk-block .chip[aria-pressed="true"],#artwork .chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+#artwork .chip[aria-pressed="true"] small{background:rgba(255,255,255,.25)}
+/* FAQ: colourful toggles */
+.faq-item{transition:border-color .2s}
+.faq-item[open]{border-color:var(--teal)}
+.faq-item:nth-child(4n+1) summary>:last-child{--q:var(--teal)}.faq-item:nth-child(4n+2) summary>:last-child{--q:var(--marigold)}
+.faq-item:nth-child(4n+3) summary>:last-child{--q:var(--rhodo)}.faq-item:nth-child(4n+4) summary>:last-child{--q:var(--sky)}
+.faq-item summary>:last-child{background:color-mix(in srgb,var(--q,var(--geru)) 16%,transparent)!important;color:var(--q,var(--geru))!important}
+/* about: colourful point rules */
+.pillars li:nth-child(1){border-color:var(--marigold)}.pillars li:nth-child(2){border-color:var(--teal)}.pillars li:nth-child(3){border-color:var(--rhodo)}
+/* reviews: soft colour cards */
+#reviews .review,#reviews article{border-top:4px solid var(--rhodo)}
+/* footer: a row of paint dots in the studio colours */
+footer{position:relative;border-top:0;padding-top:34px}
+footer::before{content:"";position:absolute;left:0;right:0;top:0;height:12px;
+  background:linear-gradient(90deg,var(--geru) 0 16.6%,var(--marigold) 0 33.3%,var(--rhodo) 0 50%,var(--sky) 0 66.6%,var(--teal) 0 83.3%,var(--lav) 0);
+  -webkit-mask:radial-gradient(circle,#000 4.5px,transparent 5px) 0 50%/22px 12px repeat-x;mask:radial-gradient(circle,#000 4.5px,transparent 5px) 0 50%/22px 12px repeat-x}
+@media (max-width:720px){.wk-block,#try-aipan,#reviews,#faq,#about{padding-block:34px 38px}.rp-blob{width:120px;height:120px;opacity:.22}.rp-blob.r{right:-62px;top:-48px}.rp-blob.l{left:-70px;width:110px;height:110px}}
+`; document.head.append(st); })();
+/* add two paint blobs to each colourful section after every render */
+function addBlobs(){
+  const sets = {workshops:['var(--rhodo)','var(--teal)'], 'try-aipan':['var(--teal)','var(--sky)'], reviews:['var(--marigold)','var(--rhodo)'], faq:['var(--lav)','var(--teal)'], about:['var(--rhodo)','var(--lav)']};
+  Object.entries(sets).forEach(([id, [a, b]]) => { const s = document.getElementById(id); if (!s || s.querySelector('.rp-blob')) return;
+    s.prepend(el('span',{class:'rp-blob r','aria-hidden':'true',style:`--c:${a}`}), el('span',{class:'rp-blob l','aria-hidden':'true',style:`--c:${b}`})); });
 }
 
 /* ---- collapsible sections on phones: shorter page, tap "Show" to open */
@@ -393,7 +471,7 @@ function workshopCard(w){
   const top = w.photo
     ? el('div',{class:'card-photo'}, el('img',{src:w.photo,alt:wTitle(w),loading:'lazy'}), el('span',{class:'card-photo-label'},t('make_label')))
     : el('div',{class:'card-band',style:`background:${th.band}`}, el('div',{class:'card-band-motif','aria-hidden':'true',html:motif(th.motif)}), el('span',{class:'deva'},th.deva));
-  return el('article',{class:'card'+(w.photo?' has-photo':'')},
+  return el('article',{class:'card'+(w.photo?' has-photo':''),style:`--band:${th.band}`},
     top,
     el('div',{class:'card-body'},
       el('div',{class:'when'}, dateBox(w), el('div',{style:'min-width:0'}, el('div',{class:'cat'}, catName(w.category)), el('h3',null,wTitle(w)))),
