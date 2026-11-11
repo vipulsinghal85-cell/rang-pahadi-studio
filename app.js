@@ -264,8 +264,12 @@ function render(){
     el('div',{class:'mandala','aria-hidden':'true',html:motif(theme.motif)}),
     el('div',{class:'wrap hero'},
       el('div',null,
-        el('img',{class:'hero-logo',src:'logo-512.png',alt:'',width:'132',height:'132'}),
-        el('div',{class:'hero-top'}, el('span',{class:'eyebrow'}, picked ? catName(S.cat) : (st.city || 'Dehradun · Uttarakhand')), el('span',{class:'rule'}), el('span',{class:'deva',lang:'hi'},words.deva)),
+        el('div',{class:'hero-id'},
+          el('img',{class:'hero-logo',src:'logo-512.png',alt:'',width:'132',height:'132'}),
+          el('div',{class:'hero-place'},
+            el('span',{class:'eyebrow'}, picked ? catName(S.cat) : (st.city || 'Dehradun · Uttarakhand')),
+            el('span',{class:'rule'}),
+            el('span',{class:'deva',lang:'hi'},words.deva))),
         el('h1',null, studioName()),
         el('div',{class:'sub'}, S.lang==='hi' ? words.subHi : words.sub),
         el('p',{class:'lede'}, (S.lang==='hi' && st.taglineHi) ? st.taglineHi : (st.tagline || '')),
@@ -362,13 +366,21 @@ html,body{overflow-x:clip}
 .rp-blob.r{right:-90px;top:-40px}.rp-blob.l{left:-110px;bottom:-30px;width:180px;height:180px;transform:rotate(140deg)}
 @media (prefers-reduced-motion:no-preference){.rp-blob{animation:rpfloat 9s ease-in-out infinite alternate}.rp-blob.l{animation-duration:11s}}
 @keyframes rpfloat{from{translate:0 0;rotate:0deg}to{translate:10px -14px;rotate:8deg}}
+/* hero: logo with the place name beside it */
+.hero-id{display:flex;align-items:center;gap:22px;margin-bottom:6px}
+.hero-id .hero-logo{margin-bottom:0;flex:none}
+.hero-place{display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-width:0}
+.hero-place .eyebrow{opacity:1;letter-spacing:.14em}
+.hero-place .rule{display:block;width:56px;height:2px;background:#ffd27a;border-radius:2px}
+.hero-place .deva{font-size:34px;line-height:1.1;color:#ffd27a;opacity:1}
+@media (max-width:760px){.hero-id{gap:16px}.hero-place{gap:8px}.hero-place .eyebrow{font-size:12px}.hero-place .deva{font-size:30px}}
 /* confetti of paint dots on the hero */
 .band::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.85;
   background:
-   radial-gradient(circle at 6% 30%,#f0c43c 0 6px,transparent 7px),radial-gradient(circle at 46% 12%,#ffb8c8 0 4px,transparent 5px),
+   radial-gradient(circle at 96% 52%,#f0c43c 0 6px,transparent 7px),radial-gradient(circle at 44% 1.5%,#ffb8c8 0 4px,transparent 5px),
    radial-gradient(circle at 54% 78%,#b5dcff 0 5px,transparent 6px),radial-gradient(circle at 92% 86%,#f0c43c 0 7px,transparent 8px),
-   radial-gradient(circle at 63% 30%,#8fd3c3 0 3px,transparent 4px),radial-gradient(circle at 30% 92%,#ffb8c8 0 6px,transparent 7px),
-   radial-gradient(circle at 97% 20%,#b5dcff 0 4px,transparent 5px),radial-gradient(circle at 38% 48%,#f0c43c 0 3px,transparent 4px)}
+   radial-gradient(circle at 70% 3%,#8fd3c3 0 3px,transparent 4px),radial-gradient(circle at 30% 92%,#ffb8c8 0 6px,transparent 7px),
+   radial-gradient(circle at 97% 20%,#b5dcff 0 4px,transparent 5px),radial-gradient(circle at 82% 6%,#f0c43c 0 3px,transparent 4px)}
 .band .hero{position:relative;z-index:1}
 /* colourful craft strip */
 .marquee span:nth-child(4n+1){color:#ffd27a}.marquee span:nth-child(4n+2){color:#ffb8c8}.marquee span:nth-child(4n+3){color:#b5dcff}.marquee span:nth-child(4n+4){color:#fbf5ef}
@@ -480,6 +492,7 @@ function workshopCard(w){
       w.status==='cancelled' ? el('span',{class:'pill bad'},t('cancelled')) : seatMeter(w),
       el('div',{class:'cardfoot'}, el('div',{class:'price'}, inr(w.price), ' ', el('small',null, wUnit(w))), bookOrWait(w))));
 }
+
 
 /* ------------------------------------------------------------ gallery */
 function gallerySection(){
