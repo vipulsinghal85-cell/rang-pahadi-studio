@@ -1417,6 +1417,7 @@ function updateStructuredData(){
   const st = S.settings, base = siteUrl();
   const addr = {'@type':'PostalAddress', streetAddress: st.address || 'Dehradun', addressLocality:'Dehradun', addressRegion:'Uttarakhand', postalCode: (String(st.address||'').match(/\b\d{6}\b/)||[''])[0] || undefined, addressCountry:'IN'};
   const place = {'@type':'Place', name:studioName(), address: addr};
+  const pin = mapCoords(); if (pin) { const [lat, lng] = pin.split(',').map(Number); place.geo = {'@type':'GeoCoordinates', latitude: lat, longitude: lng}; }
   const performer = {'@type':'Person', name: st.artistName || 'Akanksha Singhal'};
   const validFrom = new Date(Date.now() - 864e5).toISOString().slice(0,10) + 'T00:00:00+05:30';
   const logo = new URL('logo-512.png', base).href;
@@ -1428,52 +1429,14 @@ function updateStructuredData(){
       location:place, image:[w.photo || logo], performer, organizer:{'@type':'Organization', name:studioName(), url:base},
       offers:{'@type':'Offer', price:String(w.price), priceCurrency:'INR', url:base+'#calendar', validFrom, availability: seatsLeft(w)>0 ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut'}};
   });
-  const data = [{'@context':'https://schema.org','@type':'LocalBusiness', name:studioName(), image:logo, url:base, address:addr, telephone:waNumber() ? '+'+waNumber() : undefined},
-                ...events.map(e => ({'@context':'https://schema.org', ...e}))];
+  // The studio itself (LocalBusiness) is described once, in index.html, so Google doesn't count it twice.
+  const data = events.map(e => ({'@context':'https://schema.org', ...e}));
   data.push({'@context':'https://schema.org','@type':'FAQPage', mainEntity: faqItems(st).map(([q,a]) => ({'@type':'Question', name:q, acceptedAnswer:{'@type':'Answer', text:a}}))});
   const json = JSON.stringify(data);
   if (json === lastLD) return; lastLD = json;
   let tag = document.getElementById('ld-events');
   if (!tag) { tag = document.createElement('script'); tag.type = 'application/ld+json'; tag.id = 'ld-events'; document.head.append(tag); }
   tag.textContent = json;
-}
-
-/* ===================================================== Google search: workshops as events
- * Adds each upcoming workshop to the page as schema.org Event data, so Google can list it
- * in event search ("art workshop Dehradun this weekend"). Rebuilt whenever the Sheet loads. */
-function istIso(date, time, addMins){
-  if (!time) return date;
-  const [y, mo, d] = date.split('-').map(Number), [h, mi] = time.split(':').map(Number);
-  const t = new Date(Date.UTC(y, mo - 1, d, h, mi) + (addMins || 0) * 60000);   // wall-clock IST kept in UTC fields
-  const p = n => String(n).padStart(2, '0');
-  return `${t.getUTCFullYear()}-${p(t.getUTCMonth() + 1)}-${p(t.getUTCDate())}T${p(t.getUTCHours())}:${p(t.getUTCMinutes())}:00+05:30`;
-}
-function updateEventsLd(){
-  try {
-    const st = S.settings || {}, site = (st.siteUrl || location.origin).replace(/\/+$/, '') + '/';
-    const pin = mapCoords(), [lat, lng] = pin ? pin.split(',').map(Number) : [];
-    const place = { '@type': 'Place', name: studioName(),
-      address: { '@type': 'PostalAddress', streetAddress: st.address || '', addressLocality: 'Dehradun', addressRegion: 'Uttarakhand', addressCountry: 'IN' } };
-    if (pin) place.geo = { '@type': 'GeoCoordinates', latitude: lat, longitude: lng };
-    const events = S.workshops.filter(w => w.date && w.title).slice(0, 30).map(w => {
-      const left = Math.max(0, (w.seats || 0) - (w.booked || 0));
-      const ev = { '@context': 'https://schema.org', '@type': 'Event', name: w.title,
-        startDate: istIso(w.date, w.start), eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-        eventStatus: w.status === 'cancelled' ? 'https://schema.org/EventCancelled' : 'https://schema.org/EventScheduled',
-        location: place, image: [w.photo || site + 'logo-512.png'],
-        description: w.description || `${w.category || 'Art'} workshop at ${studioName()}, Dehradun. All materials included.`,
-        organizer: { '@type': 'Organization', name: studioName(), url: site },
-        offers: { '@type': 'Offer', url: site + '#calendar', price: w.price || 0, priceCurrency: 'INR',
-          availability: left > 0 && w.status !== 'cancelled' ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut' } };
-      if (w.start && w.durationMins) ev.endDate = istIso(w.date, w.start, w.durationMins);
-      if (st.artistName) ev.performer = { '@type': 'Person', name: st.artistName };
-      return ev;
-    });
-    let tag = document.getElementById('rp-events');
-    if (!events.length) { if (tag) tag.remove(); return; }
-    if (!tag) { tag = document.createElement('script'); tag.type = 'application/ld+json'; tag.id = 'rp-events'; document.head.append(tag); }
-    tag.textContent = JSON.stringify(events);
-  } catch {}
 }
 
 /* ========================================================= data loading */
@@ -1485,7 +1448,6 @@ function apply(data){
   S.reviews = Array.isArray(data.reviews) ? data.reviews : [];
   S.updated = data.updated || null;
   S.loaded = true;
-  if (API) updateEventsLd();
 }
 /* Google's script sometimes hangs: give up after 15 s and try once more. */
 async function getData(){
