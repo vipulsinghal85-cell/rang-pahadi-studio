@@ -298,7 +298,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .wa-float:hover{background:#178d47}
 .wa-icon{display:grid;place-items:center;width:32px;height:32px}
 .wa-label{padding-right:8px}
-@media (max-width:600px){.wa-label{display:none}.wa-float{padding:12px}}
+@media (max-width:600px){.wa-label{display:none}.wa-float{padding:12px;transition:translate .3s ease,visibility 0s}.wa-float.wa-away{translate:0 140px;visibility:hidden;transition:translate .3s ease,visibility 0s .3s}}
 @media (prefers-reduced-motion:no-preference){.wa-float{animation:waIn .6s ease-out .8s both}@keyframes waIn{from{transform:translateY(30px) scale(.8);opacity:0}to{transform:none;opacity:1}}}
 /* FAQ */
 .faq-list{display:flex;flex-direction:column;gap:10px;max-width:820px}
