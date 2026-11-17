@@ -1291,6 +1291,17 @@ function waButton(){
   b.href = link;
   b.setAttribute('aria-label', S.lang==='hi' ? 'WhatsApp पर पूछें' : 'Ask us on WhatsApp');
   b.querySelector('.wa-label').textContent = S.lang==='hi' ? 'पूछें' : 'Ask us';
+  watchHeroActions(b);
+}
+/* On phones the floating button sits on top of the hero buttons: tuck it away until they scroll off screen. */
+let waIO = null;
+function watchHeroActions(b){
+  if (!('IntersectionObserver' in window)) return;
+  if (waIO) waIO.disconnect();
+  const row = document.querySelector('.hero-actions');
+  if (!row) { b.classList.remove('wa-away'); return; }
+  waIO = new IntersectionObserver(es => es.forEach(e => b.classList.toggle('wa-away', e.isIntersecting)), {threshold:0});
+  waIO.observe(row);
 }
 
 /* ================================================================== FAQ */
