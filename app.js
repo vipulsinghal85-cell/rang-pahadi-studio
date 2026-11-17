@@ -328,6 +328,7 @@ function render(){
   waButton();
   setupCollapsible();
   addBlobs();
+  setupMotion();
 }
 
 
@@ -412,6 +413,74 @@ function addBlobs(){
   const sets = {workshops:['var(--rhodo)','var(--teal)'], 'try-aipan':['var(--teal)','var(--sky)'], reviews:['var(--marigold)','var(--rhodo)'], faq:['var(--lav)','var(--teal)'], about:['var(--rhodo)','var(--lav)']};
   Object.entries(sets).forEach(([id, [a, b]]) => { const s = document.getElementById(id); if (!s || s.querySelector('.rp-blob')) return;
     s.prepend(el('span',{class:'rp-blob r','aria-hidden':'true',style:`--c:${a}`}), el('span',{class:'rp-blob l','aria-hidden':'true',style:`--c:${b}`})); });
+}
+
+
+/* ===== scroll motion: reveal-on-scroll, parallax hero, colourful progress bar (kept here so only app.js needs updating) ===== */
+const REDUCE_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
+(function(){ if (document.getElementById('motion-css')) return; const st = document.createElement('style'); st.id = 'motion-css'; st.textContent = `
+.rv{opacity:0;transform:translateY(34px) scale(.985);transition:opacity .75s ease,transform .8s cubic-bezier(.2,.75,.2,1);transition-delay:calc(var(--i,0) * 90ms)}
+.rv.rv-in{opacity:1;transform:none}
+.section-head.rv h2::after,.block-head.rv h2::after{transform:scaleX(0);transform-origin:left center;transition:transform .9s cubic-bezier(.6,0,.2,1) .35s}
+.section-head.rv-in h2::after,.block-head.rv-in h2::after{transform:scaleX(1)}
+#rp-progress{position:fixed;left:0;top:0;height:4px;width:100%;z-index:80;pointer-events:none;transform-origin:left center;transform:scaleX(0);
+  background:linear-gradient(90deg,#9b3a22,#e3a127,#c8456a,#3b78a8,#23877c,#7357a4)}
+.band .hero>*{will-change:transform}
+`; document.head.append(st); })();
+
+let motionIO = null;
+const MOTION_TARGETS = ['.section-head','.chips','.block-head','.art-filters','.commission','.aipan','.gifts > *','.faq-item','.about > *','.pillars li','.split > *','.reviews > *','.reviews-empty'];
+function setupMotion(){
+  if (REDUCE_MOTION.matches || !('IntersectionObserver' in window)) return;
+  if (!motionIO) motionIO = new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    const n = e.target; motionIO.unobserve(n); n.classList.add('rv-in');
+    const wait = 950 + (parseFloat(getComputedStyle(n).getPropertyValue('--i')) || 0) * 90;
+    setTimeout(() => n.classList.remove('rv', 'rv-in'), wait);   // back to normal so hovers stay snappy
+  }), {rootMargin:'0px 0px -8% 0px', threshold:0.08});
+  const app = document.getElementById('app'); if (!app) return;
+  app.querySelectorAll(MOTION_TARGETS.join(',')).forEach(n => {
+    if (n.dataset.rvDone) return; n.dataset.rvDone = '1';
+    if (n.getBoundingClientRect().top < window.innerHeight * 0.92 && n.getBoundingClientRect().bottom > 0) return; // already on screen: no flash
+    const sibs = n.parentElement ? [...n.parentElement.children].filter(c => c.matches(MOTION_TARGETS.join(','))) : [];
+    n.style.setProperty('--i', String(Math.min(Math.max(sibs.indexOf(n), 0), 5) % 3));
+    n.classList.add('rv'); motionIO.observe(n);
+  });
+  startParallax();
+}
+
+let parallaxOn = false;
+function startParallax(){
+  if (parallaxOn) return; parallaxOn = true;
+  let bar = document.getElementById('rp-progress');
+  if (!bar) { bar = document.createElement('div'); bar.id = 'rp-progress'; bar.setAttribute('aria-hidden','true'); document.body.appendChild(bar); }
+  let ticking = false;
+  const frame = () => {
+    ticking = false;
+    const y = window.scrollY, vh = window.innerHeight, doc = document.documentElement;
+    const max = Math.max(1, doc.scrollHeight - vh);
+    bar.style.transform = `scaleX(${Math.min(1, y / max)})`;
+    const band = document.querySelector('.band');
+    if (band && y < band.offsetHeight + 200) {
+      const m = band.querySelector('.mandala'); if (m) m.style.transform = `translateY(calc(-50% + ${y * 0.22}px)) rotate(${y * 0.06}deg)`;
+      const hero = null; if (hero) {   // hero text/ticket effects come from enhance.js; only the mandala moves here
+        const kids = hero.children;
+        if (kids[0]) { kids[0].style.transform = `translateY(${y * 0.14}px)`; kids[0].style.opacity = String(Math.max(0.5, 1 - y / (band.offsetHeight * 1.6))); }
+        if (kids[1]) kids[1].style.transform = `translateY(${y * -0.06}px)` + (kids[1].classList.contains('ticket') ? ' rotate(1.5deg)' : '');
+      }
+    }
+    document.querySelectorAll('.rv:not(.rv-in)').forEach(n => {   // safety net: never leave anything hidden on screen
+      const r = n.getBoundingClientRect(); if (r.width && r.top < vh * 0.95 && r.bottom > 0) { n.classList.add('rv-in'); if (motionIO) motionIO.unobserve(n); setTimeout(() => n.classList.remove('rv', 'rv-in'), 1000); }
+    });
+    document.querySelectorAll('.rp-blob').forEach(b => {
+      const r = b.parentElement.getBoundingClientRect(); if (r.bottom < -200 || r.top > vh + 200) return;
+      b.style.transform = `translateY(${(r.top + r.height / 2 - vh / 2) * -0.12}px)` + (b.classList.contains('l') ? ' rotate(140deg)' : '');
+    });
+  };
+  const onScroll = () => { if (!ticking) { ticking = true; requestAnimationFrame(frame); } };
+  window.addEventListener('scroll', onScroll, {passive:true});
+  window.addEventListener('resize', onScroll, {passive:true});
+  frame();
 }
 
 /* ---- collapsible sections on phones: shorter page, tap "Show" to open */
