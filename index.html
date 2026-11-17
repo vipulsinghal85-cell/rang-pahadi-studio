@@ -28,7 +28,7 @@
 <meta name="twitter:title" content="Rang Pahadi Studio · Art workshops in Dehradun">
 <meta name="twitter:description" content="Aipan, painting, texture art, candle making, block printing and kids' classes. Book a seat online.">
 <meta name="twitter:image" content="https://rangpahadistudio.in/logo-512.png">
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"LocalBusiness","additionalType":"https://schema.org/ArtGallery","name":"Rang Pahadi Studio","alternateName":"रंग पहाड़ी","url":"https://rangpahadistudio.in/","logo":"https://rangpahadistudio.in/logo-512.png","image":"https://rangpahadistudio.in/logo-512.png","description":"Hands-on art workshops in Dehradun: Aipan, painting, texture art, candle making, block printing and kids' art classes. All materials included.","telephone":"+91-9654234091","priceRange":"₹₹","address":{"@type":"PostalAddress","addressLocality":"Dehradun","addressRegion":"Uttarakhand","addressCountry":"IN"},"areaServed":"Dehradun","founder":{"@type":"Person","name":"Akanksha Singhal","jobTitle":"Founder & lead artist"},"sameAs":["https://www.instagram.com/rangpahadi.studio/"]}</script>
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"LocalBusiness","additionalType":"https://schema.org/ArtGallery","name":"Rang Pahadi Studio","alternateName":"रंग पहाड़ी","url":"https://rangpahadistudio.in/","logo":"https://rangpahadistudio.in/logo-512.png","image":"https://rangpahadistudio.in/logo-512.png","description":"Hands-on art workshops in Dehradun: Aipan, painting, texture art, candle making, block printing and kids' art classes. All materials included.","telephone":"+91-9654234091","priceRange":"₹₹","address":{"@type":"PostalAddress","streetAddress":"MDDA HIG Society, Near ISBT, Haridwar Byepass Road","addressLocality":"Dehradun","addressRegion":"Uttarakhand","postalCode":"248171","addressCountry":"IN"},"areaServed":"Dehradun","founder":{"@type":"Person","name":"Akanksha Singhal","jobTitle":"Founder & lead artist"},"sameAs":["https://www.instagram.com/rangpahadi.studio/"],"geo":{"@type":"GeoCoordinates","latitude":30.2874931,"longitude":78.0007514},"hasMap":"https://www.google.com/maps?q=30.2874931,78.0007514","openingHoursSpecification":[{"@type":"OpeningHoursSpecification","dayOfWeek":["Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"],"opens":"10:00","closes":"19:00"}]}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preconnect" href="https://script.google.com" crossorigin>
@@ -83,8 +83,18 @@
 <script src="config.js"></script>
 <script src="qrcode.js"></script>
 <script src="app.js"></script>
-<!-- React Bits effects (Aurora, SplitText, ShinyText) on the hero; safe to remove -->
-<script src="enhance.js?v=6" defer></script>
+<!-- React Bits effects (sticker logo, card fade-ins, artwork carousel, tap sparkles); safe to remove.
+     Loaded once the page has finished and the phone is idle, so first taps and scrolls stay smooth.
+     Skipped with Data Saver on, on 2G, or on phones with 2 GB of memory or less: the effects are decoration. -->
+<script>
+(function(){
+  var c = navigator.connection || {};
+  if (c.saveData || /2g$/.test(c.effectiveType || '') || (navigator.deviceMemory && navigator.deviceMemory <= 2)) return;
+  function go(){ var s = document.createElement('script'); s.src = 'enhance.js?v=6'; document.body.appendChild(s); }
+  function idle(){ 'requestIdleCallback' in window ? requestIdleCallback(go, {timeout: 2500}) : setTimeout(go, 300); }
+  document.readyState === 'complete' ? idle() : addEventListener('load', idle);
+})();
+</script>
 <!-- App: install button and offline support -->
 <style>#rp-install{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:60;display:flex;align-items:center;gap:12px;max-width:440px;margin:0 auto;padding:12px 14px;border-radius:16px;background:#2f5240;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.25);font:500 14px/1.35 "Hanken Grotesk",system-ui,sans-serif}
 #rp-install img{width:40px;height:40px;border-radius:10px;background:#fbf5ef}#rp-install span{flex:1}#rp-install b{display:block;font-size:15px}
