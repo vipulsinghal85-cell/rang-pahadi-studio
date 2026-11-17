@@ -30,15 +30,37 @@ const PUBLIC_SETTINGS = ['name', 'tagline', 'taglineHi', 'city', 'address', 'hou
 /* ================================================================ web */
 
 function doGet() {
-  try { return json_(publicData_(true)); }
+  try {
+    const hit = CacheService.getScriptCache().get(PUBLIC_CACHE);
+    if (hit) return ContentService.createTextOutput(hit).setMimeType(ContentService.MimeType.JSON);
+    return json_(refreshPublicCache_());
+  }
   catch (err) { return json_({ ok: false, error: 'server', message: String(err) }); }
 }
+
+/* ===================================================== fast page loads
+ * Building the website's data reads every tab and the Drive photo folders,
+ * which takes Google several seconds. A ready-made copy is kept in the cache
+ * so visitors get it almost instantly:
+ *  - warmCache runs every 5 minutes (setup installs it) and rebuilds the copy;
+ *  - a booking, review, voucher, waitlist or enquiry, and any edit you make in
+ *    the Sheet, throw the copy away so the next visitor sees fresh data.
+ */
+const PUBLIC_CACHE = 'public-data-v1';
+function refreshPublicCache_() {
+  const data = publicData_(true);
+  try { CacheService.getScriptCache().put(PUBLIC_CACHE, JSON.stringify(data), 1200); } catch (e) {} // 20 min; warmCache renews it every 5
+  return data;
+}
+function clearPublicCache_() { try { CacheService.getScriptCache().remove(PUBLIC_CACHE); } catch (e) {} }
+function warmCache() { refreshPublicCache_(); }
 
 function doPost(e) {
   let d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, error: 'bad_request' }); }
   if (d.website) return json_({ ok: true, id: 'RP-OK', amount: 0 }); // spam bot trap
   const act = String(d.action || 'book');
+  if (act !== 'checkCode') clearPublicCache_(); // seat counts, reviews etc. may change
   try {
     if (act === 'book') return json_(book_(d));
     if (act === 'checkCode') return json_(checkCode_(d));
@@ -387,6 +409,7 @@ function json_(o) { return ContentService.createTextOutput(JSON.stringify(o)).se
 /* ========================================================== sheet UX */
 
 function onEdit(e) {
+  clearPublicCache_(); // the website shows your change on the next visit
   const sh = e.range.getSheet();
   if (sh.getName() !== TAB.W || e.range.getRow() < 2) return;
   for (let r = e.range.getRow(); r <= e.range.getLastRow(); r++) {
@@ -509,6 +532,11 @@ function setup() {
   // Daily reminder emails at about 9 AM
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'sendReminders').forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('sendReminders').timeBased().atHour(9).everyDays(1).inTimezone('Asia/Kolkata').create();
+
+  // Keep a ready-made copy of the website data so pages load fast (see warmCache)
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'warmCache').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('warmCache').timeBased().everyMinutes(5).create();
+  clearPublicCache_(); warmCache();
 
   const first = ss.getSheets()[0];
   if (first.getName() === 'Sheet1' && first.getLastRow() === 0) ss.deleteSheet(first);

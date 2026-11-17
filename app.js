@@ -1448,11 +1448,22 @@ function apply(data){
   S.updated = data.updated || null;
   S.loaded = true;
 }
+/* Google's script sometimes hangs: give up after 15 s and try once more. */
+async function getData(){
+  for (let attempt = 0; ; attempt++) {
+    const ctl = 'AbortController' in window ? new AbortController() : null;
+    const timer = ctl && setTimeout(() => ctl.abort(), 15000);
+    try {
+      const res = await fetch(API + (API.includes('?') ? '&' : '?') + 't=' + Date.now(), ctl ? {signal: ctl.signal} : {});
+      return await res.json();
+    } catch (err) { if (attempt >= 1) throw err; }
+    finally { clearTimeout(timer); }
+  }
+}
 async function load(){
   if (!API) { apply(sampleData()); render(); return; }
   try {
-    const res = await fetch(API + (API.includes('?') ? '&' : '?') + 't=' + Date.now());
-    const data = await res.json();
+    const data = await getData();
     if (!data.ok) throw new Error(data.error || 'bad');
     apply(data); S.error = false;
     try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch {}
