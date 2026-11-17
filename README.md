@@ -152,3 +152,13 @@ Version 2 adds:
 - **Settings → artworkFolderId:** the link of a Google Drive folder with Akanksha's own artwork. The newest 24 images show in the "Artwork by …" gallery.
 - **Captions:** in Drive, right-click a photo → **File information → Details → Description**. Write it like `Monsoon Aipan · Acrylic on canvas · ₹4,500`. Put `Sold` instead of a price for pieces already sold. Without a description, the file name is used.
 - Visitors can tap any piece to see it large, and tap **Ask to buy** to send you a WhatsApp message about that piece.
+
+## Faster page loads (Sheet cache)
+
+`Code.gs` keeps a ready-made copy of the website data in Google's cache, so visitors don't wait while the script reads every tab and the Drive photo folders. A booking, review, voucher, waitlist name or enquiry, or any edit you make in the Sheet, clears the copy so the next visitor sees fresh data. A 5-minute trigger rebuilds it in the background.
+
+To switch it on after updating `Code.gs`:
+
+1. In the Sheet, open **Extensions** → **Apps Script**, paste the new `Code.gs` over the old one and click **Save**.
+2. Choose **setup** in the function list and click **Run**. This adds the 5-minute `warmCache` trigger. Your data is kept.
+3. Click **Deploy** → **Manage deployments** → pencil icon → Version: **New version** → **Deploy**. The web app URL stays the same.
