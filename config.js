@@ -7,5 +7,9 @@ window.STUDIO_CONFIG = {
   SHEET_API_URL: "https://script.google.com/macros/s/AKfycbzZSfq0FkougpqCClhh7pWkJHlxdCL4IwUSU8AoaawnAQZSi7r0CVvAUEecaiTqCgxY/exec",
 
   // Used only if the Google Sheet can't be reached (10-digit mobile number).
-  WHATSAPP: "9654234091"
+  WHATSAPP: "9654234091",
+
+  // Exact studio location for the map pin and the Directions button ("latitude, longitude").
+  // To change it: in Google Maps, press and hold on the studio and copy the numbers shown.
+  MAP_COORDS: "30.2874931, 78.0007514"
 };
