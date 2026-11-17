@@ -128,6 +128,13 @@ async function copyText(text, btn){
   try { await navigator.clipboard.writeText(text); toast(t('copied')); }
   catch { const r = document.createRange(); r.selectNodeContents(btn.previousSibling || btn); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
 }
+/* Exact pin from config.js MAP_COORDS ("lat, lng"); '' if missing or not valid numbers. */
+function mapCoords(){
+  const m = String(CFG.MAP_COORDS || '').match(/^\s*(-?\d{1,2}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)\s*$/);
+  if (!m) return '';
+  const lat = +m[1], lng = +m[2];
+  return (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) ? lat + ',' + lng : '';
+}
 function waNumber(){ const n = digits(S.settings.whatsapp || CFG.WHATSAPP); if(!n) return ''; return n.length===10 ? '91'+n : n; }
 function waLink(text){ const n = waNumber(); return n ? 'https://wa.me/'+n+'?text='+encodeURIComponent(text) : null; }
 const seatsLeft = w => Math.max(0, (Number(w.seats)||0) - (Number(w.booked)||0));
@@ -914,7 +921,8 @@ function groupsPanel(groupWA){
       groupWA ? el('a',{class:'btn btn-ghost',href:groupWA,target:'_blank',rel:'noopener'},t('ask_wa')) : null));
 }
 function visitPanel(st){
-  const dir = st.mapsUrl || (st.address ? 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(st.address) : '');
+  const pin = mapCoords();
+  const dir = pin ? 'https://www.google.com/maps/dir/?api=1&destination='+pin : (st.mapsUrl || (st.address ? 'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(st.address) : ''));
   return el('div',{class:'panel',id:'visit'},
     el('h2',null,t('visit_h')), el('p',{class:'desc'},t('visit_d')),
     el('ul',{class:'list',style:'margin-top:10px'},
@@ -930,7 +938,7 @@ function visitPanel(st){
             el('b',null, hi?'स्कैन करके भुगतान करें':'Scan to pay'),
             el('small',{class:'meta'}, hi?'किसी भी UPI ऐप से: GPay, PhonePe, Paytm, BHIM। बुकिंग के बाद सही रकम वाला QR भी दिखता है।':'Works with any UPI app: GPay, PhonePe, Paytm, BHIM. After you book, you also get a QR with the exact amount.'),
             el('a',{class:'btn btn-ghost btn-sm upi-open',href:link}, hi?'UPI ऐप में खोलें':'Open in UPI app'))); })() : null),
-    st.address ? el('div',{class:'map'}, el('iframe',{title:'Map',loading:'lazy',referrerpolicy:'no-referrer-when-downgrade',src:'https://www.google.com/maps?q='+encodeURIComponent(st.address)+'&output=embed'})) : null,
+    (pin || st.address) ? el('div',{class:'map'}, el('iframe',{title:'Map',loading:'lazy',referrerpolicy:'no-referrer-when-downgrade',src: pin ? 'https://www.google.com/maps?q='+pin+'&z=17&output=embed' : 'https://www.google.com/maps?q='+encodeURIComponent(st.address)+'&output=embed'})) : null,
     dir ? el('a',{class:'btn btn-ghost',href:dir,target:'_blank',rel:'noopener',style:'margin-top:12px'},'📍 '+t('directions')) : null);
 }
 
