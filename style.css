@@ -345,6 +345,7 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .lb-cap{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .lb-cap .art-price{background:var(--geru-soft)}
 .ig-btn{gap:8px}
+.social-btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
 .ig-icon{display:inline-grid;place-items:center}
 .ig-strip{display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:16px;text-decoration:none;color:#fff;font-weight:600;background:linear-gradient(100deg,#8a2d60,#b8492d 55%,#d89a2b)}
 .ig-strip span{flex:1}
