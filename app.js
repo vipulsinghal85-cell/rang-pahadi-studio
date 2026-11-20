@@ -329,6 +329,7 @@ function render(){
     el('footer',null, el('div',{class:'wrap'},
       el('span',null, `© ${new Date().getFullYear()} ${studioName()} · ${st.city||'Dehradun, Uttarakhand'}`),
       igUrl() ? el('a',{class:'footer-ig',href:igUrl(),target:'_blank',rel:'noopener'}, igIcon(), ' ', igHandle()) : null,
+      fbUrl() ? el('a',{class:'footer-ig',href:fbUrl(),target:'_blank',rel:'noopener','aria-label':'Facebook'}, fbIcon(), ' Facebook') : null,
       S.updated ? el('span',{class:'updated'}, 'Calendar updated '+new Date(S.updated).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})) : null))
   ].filter(Boolean));
   updateStructuredData();
@@ -626,6 +627,8 @@ document.addEventListener('keydown', e => {
 /* ----------------------------------------------- artist's own artwork */
 function igHandle(){ const v = String(S.settings.instagram||'').trim(); if (!v) return ''; const m = v.match(/instagram\.com\/([A-Za-z0-9._]+)/i); return '@' + (m ? m[1] : v.replace(/^@/,'')); }
 function igUrl(){ const h = igHandle(); return h ? 'https://www.instagram.com/' + h.slice(1) + '/' : ''; }
+function fbUrl(){ const v = String(S.settings.facebook || CFG.FACEBOOK || '').trim(); if (!v) return ''; return /^https:\/\/(www\.|m\.)?facebook\.com\//i.test(v) ? v : 'https://www.facebook.com/' + v.replace(/^@/,'').replace(/^\/+|\/+$/g,'') + '/'; }
+function fbIcon(){ return el('span',{class:'ig-icon','aria-hidden':'true',html:'<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4c-.3 0-1.2-.1-2.3-.1-2.3 0-3.8 1.4-3.8 3.9v2.3H7.9v3h2.6V21h3z"/></svg>'}); }
 function igIcon(){ return el('span',{class:'ig-icon','aria-hidden':'true',html:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>'}); }
 /* Caption from the Drive file description or name, e.g. "Monsoon Aipan · Acrylic on canvas · ₹4,500" */
 function cleanCaption(t){
@@ -910,7 +913,9 @@ function aboutSection(st){
         el('div',null, el('h3',null, artist), el('div',{class:'role'}, st.artistRole || 'Founder & lead artist'))),
       st.artistBio ? el('p',null, st.artistBio) : null,
       st.artistQuote ? el('div',{class:'quote'}, '“'+st.artistQuote+'”') : null,
-      igUrl() ? el('a',{class:'btn btn-ghost ig-btn',href:igUrl(),target:'_blank',rel:'noopener',style:'margin-top:16px'}, igIcon(), (S.lang==='hi'?' Instagram पर देखें ':' Follow on Instagram ')) : null) : null);
+      (igUrl() || fbUrl()) ? el('div',{class:'social-btns'},
+        igUrl() ? el('a',{class:'btn btn-ghost ig-btn',href:igUrl(),target:'_blank',rel:'noopener'}, igIcon(), (S.lang==='hi'?' Instagram पर देखें ':' Follow on Instagram ')) : null,
+        fbUrl() ? el('a',{class:'btn btn-ghost ig-btn',href:fbUrl(),target:'_blank',rel:'noopener'}, fbIcon(), (S.lang==='hi'?' Facebook पर देखें ':' Facebook ')) : null) : null) : null);
 }
 
 function groupsPanel(groupWA){
