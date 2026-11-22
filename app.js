@@ -641,7 +641,9 @@ function artInfo(caption){
   const parts = cleanCaption(caption).split(/\s*[·|]\s*/).filter(Boolean);
   const pi = parts.findIndex(x => /₹|rs\.?\s*\d|^sold$/i.test(x));
   const price = pi >= 0 ? parts.splice(pi,1)[0].replace(/^rs\.?\s*/i,'₹').replace(/₹\s*(\d{4,})(?![\d,])/g, (m, n) => inr(n)) : '';   // ₹2999 → ₹2,999
-  return { title: parts[0] || '', detail: parts.slice(1).join(' · '), price: /^sold$/i.test(price) ? (S.lang==='hi'?'बिक गया':'Sold') : price };
+  // keep sizes such as "30 × 20 in" or "10 in diameter" on one line
+  const detail = parts.slice(1).join(' · ').replace(/(\d)\s*[×x]\s*(\d)/g, '$1\u00a0×\u00a0$2').replace(/(\d)\s+(in|cm)\b/g, '$1\u00a0$2');
+  return { title: parts[0] || '', detail, price: /^sold$/i.test(price) ? (S.lang==='hi'?'बिक गया':'Sold') : price };
 }
 /* Groups artwork by words in its title, so no extra sheet column is needed. */
 const ART_KINDS = [
