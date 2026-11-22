@@ -12,7 +12,7 @@ try { S.lang = localStorage.getItem('rp-lang') === 'hi' ? 'hi' : 'en'; } catch {
 /* ---------------------------------------------------------------- words */
 const I18N = {
   en: {
-    nav_workshops:'Workshops', nav_gallery:'Gallery', nav_paint:'Paint for me', nav_gift:'Gift', nav_try:'Virtual studio', nav_about:'About us', nav_faq:'FAQ', nav_visit:'Visit', lang_btn:'हिं',
+    nav_workshops:'Workshops', nav_gallery:'Gallery', nav_paint:'Paint for me', nav_gift:'Gift', nav_try:'Try it yourself', nav_about:'About us', nav_faq:'FAQ', nav_visit:'Visit', lang_btn:'हिं',
     see_all:'See all workshops', all_ws:'All workshops', about_us:'About us', find_btn:'Find my workshop', parties:'Parties & groups', explore:'Explore', everything:'Everything',
     facts:['Batches of 10–16','All materials included','Take your art home'], next_ws:'Next workshop',
     seats_left:(l,t)=>`${l} of ${t} seats left`, full:'Fully booked', book:'Book a seat', waitlist:'Join waitlist', cancelled:'Cancelled',
@@ -45,7 +45,7 @@ const I18N = {
     err_name:'Please add your name.', err_phone:'Please add a 10-digit mobile number so the studio can reach you.', err_generic:'That didn’t go through. Check your connection and try again, or send it on WhatsApp.',
   },
   hi: {
-    nav_workshops:'कार्यशालाएँ', nav_gallery:'गैलरी', nav_paint:'मेरे लिए पेंट', nav_gift:'उपहार', nav_try:'वर्चुअल स्टूडियो', nav_about:'हमारे बारे में', nav_faq:'सवाल', nav_visit:'पता', lang_btn:'EN',
+    nav_workshops:'कार्यशालाएँ', nav_gallery:'गैलरी', nav_paint:'मेरे लिए पेंट', nav_gift:'उपहार', nav_try:'ख़ुद आज़माइए', nav_about:'हमारे बारे में', nav_faq:'सवाल', nav_visit:'पता', lang_btn:'EN',
     see_all:'सभी कार्यशालाएँ देखें', all_ws:'सभी कार्यशालाएँ', about_us:'हमारे बारे में', find_btn:'मेरी कार्यशाला खोजें', parties:'पार्टी और ग्रुप', explore:'देखें', everything:'सब',
     facts:['10–16 लोगों के बैच','सारी सामग्री शामिल','अपनी कला घर ले जाएँ'], next_ws:'अगली कार्यशाला',
     seats_left:(l,t)=>`${t} में से ${l} सीटें बाकी`, full:'सभी सीटें भर गईं', book:'सीट बुक करें', waitlist:'प्रतीक्षा सूची में जुड़ें', cancelled:'रद्द',
@@ -1274,6 +1274,7 @@ function buildTexture(){
 .hero-back{display:inline-flex;align-items:center;gap:6px;margin-bottom:18px;padding:7px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.14);color:#fff;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
 .hero-back:hover{background:rgba(255,255,255,.24)}
 @media (max-width:400px){.navlinks{gap:2px}.navlinks a{padding:6px 7px;font-size:13.5px}}
+@media (max-width:340px){.navlinks{gap:0}.navlinks a{padding:6px 5px;font-size:12.5px}}
 /* phones: the drawing stays on screen while you scroll through the tools below it */
 @media (max-width:760px){
   .aipan .ap-stage{position:sticky;top:0;z-index:5;background:var(--surface);padding:10px 0 12px;margin:-10px 0 0;box-shadow:0 10px 12px -12px rgba(60,20,0,.35)}
