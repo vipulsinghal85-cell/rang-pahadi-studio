@@ -10,7 +10,7 @@
  * edit (pencil) > Version: New version > Deploy. The web app URL stays the same.
  */
 
-const TAB = { W: 'Workshops', B: 'Bookings', S: 'Settings', O: 'Overview', V: 'Vouchers', C: 'Coupons', L: 'Waitlist', R: 'Reviews', E: 'Enquiries' };
+const TAB = { W: 'Workshops', B: 'Bookings', S: 'Settings', O: 'Overview', V: 'Vouchers', C: 'Coupons', L: 'Waitlist', R: 'Reviews', E: 'Enquiries', A: 'Artwork' };
 
 const HEAD = {
   Workshops: ['ID', 'Title', 'Category', 'Date', 'Start time', 'Duration (min)', 'Seats', 'Price (₹)', 'Price label', 'Level', 'Description', 'Status', 'Photo', 'Title (Hindi)', 'Description (Hindi)'],
@@ -20,6 +20,7 @@ const HEAD = {
   Waitlist: ['Created', 'Workshop ID', 'Workshop', 'Workshop date', 'Name', 'Phone', 'Seats', 'Contacted'],
   Reviews: ['Created', 'Name', 'Workshop', 'Rating', 'Review', 'Show on website'],
   Enquiries: ['Created', 'Name', 'Phone', 'Email', 'Organisation', 'Type', 'People', 'Preferred date', 'Message', 'Handled'],
+  Artwork: ['Photo', 'Title', 'Medium', 'Size', 'Price', 'Status', 'Notes'],
 };
 const CATEGORIES = ['Traditional Indian art', 'Painting & drawing', 'Mixed media & texture', 'Candle making', 'Handicrafts', 'Kids'];
 const NEW_TAGLINE = "Hands-on art workshops in the Doon valley: Aipan, painting, texture art, candle making, block printing and kids' classes. All materials included.";
@@ -253,7 +254,7 @@ function publicData_(withExtras) {
       .map(r => ({ name: String(r['Name']).trim(), workshop: String(r['Workshop'] || '').trim(), rating: Number(r['Rating']) || 5, review: String(r['Review']).trim() }))
       .reverse().slice(0, 12);
     out.gallery = gallery_(settings.galleryFolderId);
-    out.artworks = gallery_(settings.artworkFolderId);
+    out.artworks = artworks_(settings.artworkFolderId);
   }
   return out;
 }
@@ -279,6 +280,51 @@ function gallery_(folderRef) {
   const out = list.slice(0, 24).map(x => ({ thumb: `https://drive.google.com/thumbnail?id=${x.id}&sz=w800`, full: `https://drive.google.com/thumbnail?id=${x.id}&sz=w1800`, caption: /^(img|dsc|image|photo|whatsapp image)\b|^\d+$/i.test(x.caption) ? '' : x.caption }));
   cache.put(key, JSON.stringify(out), 900);
   return out;
+}
+
+/**
+ * The "Artwork by ..." gallery. Each row of the Artwork tab is one piece, shown in row order:
+ * Photo (Drive link of the photo), Title, Medium, Size, Price, Status (Available, Sold or Hide).
+ * Photos in the artwork Drive folder that have no row yet still show, after the listed ones,
+ * with their Drive description as the caption. With an empty Artwork tab, the folder alone is used.
+ */
+function artworks_(folderRef) {
+  const folder = gallery_(folderRef);
+  const rows = readTable_(sheet_(TAB.A));
+  if (!rows.length) return folder;
+  const listed = {}, out = [];
+  rows.forEach(r => {
+    const id = driveId_(r['Photo']);
+    if (!id) return;
+    listed[id] = true;
+    const status = String(r['Status'] || '').trim().toLowerCase();
+    if (status === 'hide' || status === 'hidden') return;
+    const price = status === 'sold' ? 'Sold' : price_(r['Price']);
+    const caption = [r['Title'], r['Medium'], r['Size'], price].map(v => String(v || '').trim()).filter(Boolean).join(' · ');
+    shareOnce_(id);
+    out.push({ thumb: `https://drive.google.com/thumbnail?id=${id}&sz=w800`, full: `https://drive.google.com/thumbnail?id=${id}&sz=w1800`, caption });
+  });
+  folder.forEach(g => { const id = driveId_(g.thumb); if (id && !listed[id]) out.push(g); });
+  return out.slice(0, 40);
+}
+
+/** "₹4,999" from 4999 or "4999"; text such as "₹3,999 for the set" is kept as written. */
+function price_(v) {
+  if (v === '' || v === null || v === undefined) return '';
+  const s = String(v).trim();
+  if (/^\d+(\.\d+)?$/.test(s)) return '₹' + Math.round(Number(s)).toString().replace(/(\d)(?=(\d\d)+\d$)/g, '$1,');
+  return /^\d/.test(s) ? '₹' + s : s;
+}
+
+/** Photos must be viewable by link to show on the site; checked once every 6 hours per photo. */
+function shareOnce_(id) {
+  const cache = CacheService.getScriptCache(), key = 'shared-' + id;
+  if (cache.get(key)) return;
+  try {
+    const f = DriveApp.getFileById(id);
+    if (f.getSharingAccess() !== DriveApp.Access.ANYONE_WITH_LINK) f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  } catch (e) {}
+  cache.put(key, '1', 21600);
 }
 
 function photoUrl_(v) {
@@ -489,7 +535,7 @@ function setup() {
     ['parking', '', 'Optional: parking / how to find us, shown in the FAQ'],
     ['cancelPolicy', '', 'Optional: your cancellation rule, shown in the FAQ (default: free date change up to 48 hours before)'],
     ['instagram', '', 'Your Instagram handle (e.g. rangpahadi) or profile link'],
-    ['artworkFolderId', '', 'Link of a Google Drive folder with YOUR artwork (the Gallery section). Caption = file description, e.g. "Monsoon Aipan · Acrylic on canvas · ₹4,500"'],
+    ['artworkFolderId', '', 'Link of a Google Drive folder with YOUR artwork (the Gallery section). Titles, sizes and prices come from the Artwork tab; a photo with no row there uses its Drive description, e.g. "Monsoon Aipan · Acrylic on canvas · ₹4,500"'],
   ];
   const have = new Set(s.getLastRow() > 1 ? s.getRange(2, 1, s.getLastRow() - 1, 1).getValues().map(r => String(r[0]).trim()) : []);
   const add = defaults.filter(r => !have.has(r[0]));
@@ -517,6 +563,12 @@ function setup() {
   ensure_(ss, TAB.L, HEAD.Waitlist).getRange('A2:A').setNumberFormat('dd mmm yyyy, hh:mm');
   const r = ensure_(ss, TAB.R, HEAD.Reviews); r.getRange('A2:A').setNumberFormat('dd mmm yyyy'); r.setColumnWidth(5, 420);
   const e = ensure_(ss, TAB.E, HEAD.Enquiries); e.getRange('A2:A').setNumberFormat('dd mmm yyyy, hh:mm'); e.setColumnWidth(9, 360);
+  const a = ensure_(ss, TAB.A, HEAD.Artwork);
+  [260, 260, 300, 130, 190, 110, 280].forEach((w, i) => a.setColumnWidth(i + 1, w));
+  a.getRange('F2:F').setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(['Available', 'Sold', 'Hide'], true).setAllowInvalid(true).build());
+  note_(a, 'Photo', 'Link of the photo in Google Drive (right-click > Share > Copy link). Rows show on the website in this order.');
+  note_(a, 'Price', 'e.g. 4999, or text such as ₹3,999 for the set. Leave empty to show no price.');
+  note_(a, 'Status', 'Available, Sold (shows "Sold" instead of the price) or Hide (not shown).');
 
   const o = ensure_(ss, TAB.O, ['Date', 'Workshop', 'Seats', 'Booked', 'Left', 'Fill', 'Booked revenue', 'Paid']);
   o.getRange('A2').setFormula('=ARRAYFORMULA(IF(Workshops!A2:A="",,Workshops!D2:D))');

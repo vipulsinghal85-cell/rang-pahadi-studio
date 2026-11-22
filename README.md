@@ -150,7 +150,8 @@ Version 2 adds:
 
 - **Settings → instagram:** your handle, like `rangpahadi`, or your profile link. A "Follow on Instagram" button then shows in the gallery, the artist card and the footer.
 - **Settings → artworkFolderId:** the link of a Google Drive folder with Akanksha's own artwork. The newest 24 images show in the "Artwork by …" gallery.
-- **Captions:** in Drive, right-click a photo → **File information → Details → Description**. Write it like `Monsoon Aipan · Acrylic on canvas · ₹4,500`. Put `Sold` instead of a price for pieces already sold. Without a description, the file name is used.
+- **Artwork tab (titles, sizes, prices):** each row is one piece: **Photo** (the photo's Drive link: right-click → Share → Copy link), **Title**, **Medium**, **Size** (e.g. `12 × 15 in`), **Price** (e.g. `₹4,999` or `₹3,999 for the set`), **Status** (`Available`, `Sold` or `Hide`) and **Notes** (not shown on the site). Rows show on the website in this order, and edits appear within a few minutes.
+- **New photos:** upload them to the artwork folder. A photo with no row in the Artwork tab still shows, after the listed ones, using its Drive description (e.g. `Monsoon Aipan · Acrylic on canvas · ₹4,500`) as the caption. Add a row for it to set its title, size and price properly.
 - Visitors can tap any piece to see it large, and tap **Ask to buy** to send you a WhatsApp message about that piece.
 
 ## Faster page loads (Sheet cache)
