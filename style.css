@@ -352,3 +352,14 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .ig-strip:hover{filter:brightness(1.06)}
 .footer-ig{color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px;font-weight:600}
 .footer-ig:hover{color:var(--geru)}
+
+/* round artwork carousel: caption for the piece in front, bigger wheel on phones */
+.rb-cap{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:10px 14px;margin:-6px auto 6px;min-height:52px;padding:8px 10px 8px 18px;max-width:640px;background:var(--surface);border:1px solid var(--line);border-radius:999px;box-shadow:0 8px 22px -14px rgba(60,20,0,.35);width:fit-content}
+.rb-cap-text{display:flex;flex-direction:column;line-height:1.25;text-align:left}
+.rb-cap-text b{font-family:var(--display);font-size:16px;color:var(--ink)}
+.rb-cap-text small{font-size:12.5px;color:var(--muted)}
+.rb-cap-price{background:var(--geru-soft);color:var(--geru);font-weight:800;font-size:13.5px;border-radius:99px;padding:5px 12px;white-space:nowrap}
+.rb-cap-price.sold{background:var(--ink);color:var(--paper)}
+.rb-cap-view{border:0;background:var(--geru);color:#fff;font:inherit;font-weight:700;font-size:13.5px;border-radius:99px;padding:8px 14px;cursor:pointer;white-space:nowrap}
+.rb-cap-view:hover{filter:brightness(1.08)}
+@media (max-width:760px){#artwork .rb-showcase{height:410px}.rb-cap{border-radius:18px;padding:10px 12px;margin-top:-10px}.rb-cap-text{text-align:center;align-items:center;width:100%}}
