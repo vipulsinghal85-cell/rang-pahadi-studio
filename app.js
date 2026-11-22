@@ -706,96 +706,9 @@ function artworkSection(){
     revealArt(grid);
   }
   fill();
-  // data-rb tells enhance.js not to add its own 3D carousel: this section has its own
-  return el('section',{class:'block art-block',id:'artwork','data-rb':'1'}, head, artCarousel(items), chips, grid,
+  return el('section',{class:'block art-block',id:'artwork'}, head, chips, grid,
     ig ? el('a',{class:'ig-strip',href:ig,target:'_blank',rel:'noopener',style:'margin-top:20px'}, igIcon(), el('span',null, hi?`और कलाकृतियाँ ${igHandle()} पर`:`More work and behind-the-scenes on ${igHandle()}`), el('b',null,'→')) : null);
 }
-/* Gallery-wall carousel: framed pieces, the centre one lit and larger, with title, size and price. */
-let carTimer = 0, carIO = null;
-function artCarousel(items){
-  clearInterval(carTimer); if (carIO) carIO.disconnect();
-  const hi = S.lang==='hi', list = items.slice(0, 12);
-  if (list.length < 3) return null;
-  const all = items.map(x => x.g);
-  const track = el('div',{class:'car-track',role:'list'});
-  const slides = list.map((x, j) => {
-    const a = x.a, sold = /^(sold|बिक गया)$/i.test(a.price);
-    const size = (a.detail.match(/\d[\d  ×x–-]* ?(inches|inch|cm)[^·]*/) || [''])[0].trim();
-    return el('div',{class:'car-slide',role:'listitem'},
-      el('button',{type:'button',class:'car-art',onclick:()=>{ if (slides[j].classList.contains('is-active')) openLightbox(x.i, all, true); else go(j); },'aria-label':(a.title||'Artwork')+(a.price?', '+a.price:'')},
-        el('span',{class:'car-photo'}, driveImg(x.g.thumb,{alt:a.title||'',loading: j < 4 ? 'eager' : 'lazy'}))),
-      el('div',{class:'car-cap'},
-        el('b',null,a.title),
-        size ? el('small',null,size) : null,
-        a.price ? el('span',{class:'car-price'+(sold?' sold':'')}, a.price) : null));
-  });
-  track.append(...slides);
-  const dots = el('div',{class:'car-dots'}, list.map((_, j) => el('button',{type:'button','aria-label':(hi?'कलाकृति ':'Artwork ')+(j+1),onclick:()=>go(j)})));
-  let cur = 0;
-  const center = j => slides[j].offsetLeft + slides[j].offsetWidth/2 - track.clientWidth/2;
-  function go(j, smooth = true){ cur = (j + slides.length) % slides.length; track.scrollTo({left:center(cur), behavior: smooth && !REDUCE_MOTION.matches ? 'smooth' : 'auto'}); }
-  function mark(){
-    const mid = track.scrollLeft + track.clientWidth/2; let best = 0, bd = 1e9;
-    slides.forEach((sl, j) => { const d = Math.abs(sl.offsetLeft + sl.offsetWidth/2 - mid); if (d < bd) { bd = d; best = j; } });
-    cur = best; slides.forEach((sl, j) => { sl.classList.toggle('is-active', j===best); sl.classList.toggle('is-left', j < best); sl.classList.toggle('is-right', j > best); sl.classList.toggle('is-near', Math.abs(j-best)===1); });
-    [...dots.children].forEach((d, j) => d.setAttribute('aria-current', String(j===best)));
-  }
-  let raf = 0; track.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; mark(); }); }, {passive:true});
-  const arrow = (dir, label, path) => el('button',{type:'button',class:'car-arrow '+(dir<0?'prev':'next'),'aria-label':label,onclick:()=>{ go(cur+dir); pause(); },html:`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg>`});
-  // moves on by itself every 4.5 s while on screen; stops for good once the visitor takes over
-  let userTook = false, onScreen = false;
-  const pause = () => { userTook = true; clearInterval(carTimer); };
-  const auto = () => { clearInterval(carTimer); if (!userTook && onScreen && !REDUCE_MOTION.matches) carTimer = setInterval(() => { if (!document.hidden) go(cur+1); }, 4500); };
-  ['pointerdown','wheel','touchstart','keydown'].forEach(ev => track.addEventListener(ev, pause, {passive:true}));
-  const wrap = el('div',{class:'car',tabindex:'-1'},
-    el('div',{class:'car-wall'}, track, arrow(-1, hi?'पिछली':'Previous', 'M15 5l-7 7 7 7'), arrow(1, hi?'अगली':'Next', 'M9 5l7 7-7 7')), dots,
-    el('p',{class:'car-hint'}, hi?'खिसकाइए या तीर दबाइए · बड़ा देखने के लिए बीच वाली पर टैप करें':'Swipe or use the arrows · tap the centre piece to see it large'));
-  wrap.addEventListener('keydown', e => { if (e.key==='ArrowRight'){ go(cur+1); pause(); } if (e.key==='ArrowLeft'){ go(cur-1); pause(); } });
-  if ('IntersectionObserver' in window){ carIO = new IntersectionObserver(es => { onScreen = es[0].isIntersecting; onScreen ? auto() : clearInterval(carTimer); }, {threshold:0.4}); carIO.observe(wrap); }
-  requestAnimationFrame(() => requestAnimationFrame(() => { go(0, false); mark(); }));
-  let rs = 0; window.addEventListener('resize', () => { clearTimeout(rs); rs = setTimeout(() => { if (wrap.isConnected) go(cur, false); }, 150); });
-  return wrap;
-}
-(function(){ const st = document.createElement('style'); st.textContent = `
-.car{margin:6px 0 30px;outline:none}
-.car-wall{position:relative;margin:0 calc(50% - 50vw);padding:26px 0 14px;background:linear-gradient(180deg,rgba(246,230,223,0) 0%,#f6ece4 18%,#f6ece4 82%,rgba(246,230,223,0) 100%)}
-.car-track{perspective:1400px;display:flex;gap:clamp(18px,3vw,40px);overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:18px calc(50vw - clamp(120px,15vw,170px)) 8px;align-items:flex-start}
-.car-track::-webkit-scrollbar{display:none}
-.car-slide{flex:none;width:clamp(240px,28vw,320px);scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .5s;opacity:.6;transform:scale(.88)}
-.car-slide.is-left{transform:scale(.86) rotateY(26deg);transform-origin:right center}
-.car-slide.is-right{transform:scale(.86) rotateY(-26deg);transform-origin:left center}
-.car-slide.is-near{opacity:.72}
-.car-slide.is-active{opacity:1;transform:scale(1) rotateY(0)}
-.car-art{display:block;width:100%;padding:0;border:0;background:none;cursor:pointer;position:relative}
-.car-photo{position:relative;display:block;aspect-ratio:4/5;border-radius:18px;overflow:hidden;background:#efe6da;box-shadow:0 22px 40px -18px rgba(60,30,10,.55),0 4px 10px rgba(60,30,10,.12);transition:box-shadow .5s}
-.car-photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .8s cubic-bezier(.2,.8,.2,1)}
-.car-slide.is-active .car-photo{box-shadow:0 30px 50px -18px rgba(60,30,10,.6),0 0 0 4px #fff,0 0 0 5px rgba(155,58,34,.25)}
-.car-art:hover .car-photo img{transform:scale(1.04)}
-.car-photo::after{content:"";position:absolute;inset:-20%;background:linear-gradient(115deg,transparent 38%,rgba(255,250,235,.0) 42%,rgba(255,250,235,.42) 50%,rgba(255,250,235,0) 58%,transparent 62%);transform:translateX(-120%);pointer-events:none}
-.car-slide.is-active .car-photo::after{animation:carSheen 5.5s ease-in-out 1s infinite}
-@keyframes carSheen{0%{transform:translateX(-120%)}28%,100%{transform:translateX(120%)}}
-.car-slide.is-left .car-photo,.car-slide.is-right .car-photo{box-shadow:0 16px 30px -18px rgba(60,30,10,.5)}
-.car-cap{margin-top:16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:84px;padding:0 6px}
-.car-cap b{font-family:var(--display);font-size:17px;line-height:1.25;color:var(--ink)}
-.car-cap small{font-size:13px;color:var(--muted)}
-.car-price{margin-top:4px;background:var(--geru);color:#fff;font-weight:800;font-size:13px;border-radius:99px;padding:4px 12px}
-.car-price.sold{background:var(--ink)}
-.car-arrow{position:absolute;top:calc(26px + 18px + clamp(240px,28vw,320px)*0.62);transform:translateY(-50%);width:48px;height:48px;border-radius:50%;border:0;background:rgba(255,255,255,.92);color:var(--ink);display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 18px rgba(40,20,5,.22)}
-.car-arrow:hover{background:#fff;color:var(--geru)}
-.car-arrow.prev{left:max(16px,calc(50% - 50vw + 24px))}
-.car-arrow.next{right:max(16px,calc(50% - 50vw + 24px))}
-.car-dots{display:flex;justify-content:center;gap:8px;margin-top:16px}
-.car-dots button{width:8px;height:8px;border-radius:99px;border:0;padding:0;background:#d8cbb9;cursor:pointer;transition:width .3s,background .3s}
-.car-dots button[aria-current="true"]{width:24px;background:var(--geru)}
-.car-hint{text-align:center;font-size:12.5px;color:var(--muted);margin:10px 0 0}
-@media (max-width:760px){
-  .car-slide{width:68vw}
-  .car-track{padding-inline:16vw}
-  .car-arrow{width:40px;height:40px;top:calc(26px + 18px + 68vw*0.62)}
-  .car-cap b{font-size:15.5px}
-}
-@media (prefers-reduced-motion:reduce){.car-slide{transition:none}.car-slide.is-active .car-photo::after{animation:none}}
-`; document.head.append(st); })();
 function revealArt(root){
   const cards = root.querySelectorAll('.art-item');
   if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) { cards.forEach(c => c.classList.add('in')); return; }
