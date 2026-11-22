@@ -12,8 +12,8 @@ try { S.lang = localStorage.getItem('rp-lang') === 'hi' ? 'hi' : 'en'; } catch {
 /* ---------------------------------------------------------------- words */
 const I18N = {
   en: {
-    nav_workshops:'Workshops', nav_gallery:'Gallery', nav_paint:'Paint for me', nav_gift:'Gift', nav_about:'About us', nav_faq:'FAQ', nav_visit:'Visit', lang_btn:'हिं',
-    see_all:'See all workshops', about_us:'About us', find_btn:'Find my workshop', parties:'Parties & groups', explore:'Explore', everything:'Everything',
+    nav_workshops:'Workshops', nav_gallery:'Gallery', nav_paint:'Paint for me', nav_gift:'Gift', nav_try:'Try art', nav_about:'About us', nav_faq:'FAQ', nav_visit:'Visit', lang_btn:'हिं',
+    see_all:'See all workshops', all_ws:'All workshops', about_us:'About us', find_btn:'Find my workshop', parties:'Parties & groups', explore:'Explore', everything:'Everything',
     facts:['Batches of 10–16','All materials included','Take your art home'], next_ws:'Next workshop',
     seats_left:(l,t)=>`${l} of ${t} seats left`, full:'Fully booked', book:'Book a seat', waitlist:'Join waitlist', cancelled:'Cancelled',
     upcoming:'Upcoming workshops', scheduled:n=>`${n} scheduled`, not_sure:'Not sure which one to pick?',
@@ -45,8 +45,8 @@ const I18N = {
     err_name:'Please add your name.', err_phone:'Please add a 10-digit mobile number so the studio can reach you.', err_generic:'That didn’t go through. Check your connection and try again, or send it on WhatsApp.',
   },
   hi: {
-    nav_workshops:'कार्यशालाएँ', nav_gallery:'गैलरी', nav_paint:'मेरे लिए पेंट', nav_gift:'उपहार', nav_about:'हमारे बारे में', nav_faq:'सवाल', nav_visit:'पता', lang_btn:'EN',
-    see_all:'सभी कार्यशालाएँ देखें', about_us:'हमारे बारे में', find_btn:'मेरी कार्यशाला खोजें', parties:'पार्टी और ग्रुप', explore:'देखें', everything:'सब',
+    nav_workshops:'कार्यशालाएँ', nav_gallery:'गैलरी', nav_paint:'मेरे लिए पेंट', nav_gift:'उपहार', nav_try:'कला आज़माइए', nav_about:'हमारे बारे में', nav_faq:'सवाल', nav_visit:'पता', lang_btn:'EN',
+    see_all:'सभी कार्यशालाएँ देखें', all_ws:'सभी कार्यशालाएँ', about_us:'हमारे बारे में', find_btn:'मेरी कार्यशाला खोजें', parties:'पार्टी और ग्रुप', explore:'देखें', everything:'सब',
     facts:['10–16 लोगों के बैच','सारी सामग्री शामिल','अपनी कला घर ले जाएँ'], next_ws:'अगली कार्यशाला',
     seats_left:(l,t)=>`${t} में से ${l} सीटें बाकी`, full:'सभी सीटें भर गईं', book:'सीट बुक करें', waitlist:'प्रतीक्षा सूची में जुड़ें', cancelled:'रद्द',
     upcoming:'आने वाली कार्यशालाएँ', scheduled:n=>`${n} कार्यशालाएँ`, not_sure:'तय नहीं कर पा रहे?',
@@ -283,6 +283,7 @@ function render(){
     el('div',{class:'mandala','aria-hidden':'true',html:motif(theme.motif)}),
     el('div',{class:'wrap hero'},
       el('div',null,
+        picked ? el('button',{type:'button',class:'hero-back',onclick:()=>{ S.cat='All'; render(); }}, '← '+t('all_ws')) : null,
         el('div',{class:'hero-id'},
           el('img',{class:'hero-logo',src:'logo-512.png',alt:'',width:'132',height:'132',onerror:logoRetry}),
           el('div',{class:'hero-place'},
@@ -531,7 +532,8 @@ function setupCollapsible(){
     btn.replaceChildren(el('span',null, open ? (hi?'कम दिखाएँ':'Show less') : (hi?'देखें':'Show')), el('span',{class:'cl-chev','aria-hidden':'true'}, open ? '▴' : '▾'));
   });
 }
-function openSection(id){ if (COLLAPSE.includes(id) && !openSecs.has(id)) { openSecs.add(id); setupCollapsible(); } }
+function openSection(id){ const ids = id==='try-aipan' ? ['try-aipan','try-texture'] : [id]; let changed = false;
+  ids.forEach(i => { if (COLLAPSE.includes(i) && !openSecs.has(i)) { openSecs.add(i); changed = true; } }); if (changed) setupCollapsible(); }
 document.addEventListener('click', e => { const a = e.target.closest && e.target.closest('a[href^="#"]'); if (a) openSection(a.getAttribute('href').slice(1)); }, true);
 window.addEventListener('hashchange', () => openSection(location.hash.slice(1)));
 if (location.hash) openSection(location.hash.slice(1));
@@ -1269,6 +1271,14 @@ function buildTexture(){
 .tx-swatches button{width:34px;height:34px;border-radius:50%;border:3px solid var(--paper);background:var(--sw);box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}
 .tx-swatches button.gold{background:linear-gradient(135deg,#f3dc8a,#c9a043 45%,#8f6b1f 75%,#e9cf7a)}
 .tx-swatches button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--geru)}
+.hero-back{display:inline-flex;align-items:center;gap:6px;margin-bottom:18px;padding:7px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.14);color:#fff;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+.hero-back:hover{background:rgba(255,255,255,.24)}
+@media (max-width:400px){.navlinks{gap:2px}.navlinks a{padding:6px 7px;font-size:13.5px}}
+/* phones: the drawing stays on screen while you scroll through the tools below it */
+@media (max-width:760px){
+  .aipan .ap-stage{position:sticky;top:0;z-index:5;background:var(--surface);padding:10px 0 12px;margin:-10px 0 0;box-shadow:0 10px 12px -12px rgba(60,20,0,.35)}
+  .aipan .ap-canvas,.aipan .tx-frame{width:min(100%,52svh);max-width:min(100%,52svh)}
+}
 `; document.head.append(st); })();
 
 /* =============================================================== modals */
@@ -1750,6 +1760,11 @@ async function load(){
   render();
 }
 
+/* The logo and name at the top always go back to the home view: all workshops, top of the page. */
+document.querySelector('.topbar > a')?.addEventListener('click', e => { e.preventDefault();
+  if (S.cat !== 'All') { S.cat = 'All'; render(); }
+  if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+  window.scrollTo({ top: 0, behavior: 'smooth' }); });
 document.getElementById('langBtn')?.addEventListener('click', () => { S.lang = S.lang==='hi' ? 'en' : 'hi'; try { localStorage.setItem('rp-lang', S.lang); } catch {} render(); });
 try { const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); if (API && cached && cached.ok) { apply(cached); shownData = dataKey(cached); } } catch {}
 render();
