@@ -91,7 +91,7 @@
 (function(){
   var c = navigator.connection || {};
   if (c.saveData || /2g$/.test(c.effectiveType || '') || (navigator.deviceMemory && navigator.deviceMemory <= 2)) return;
-  function go(){ var s = document.createElement('script'); s.src = 'enhance.js?v=6'; document.body.appendChild(s); }
+  function go(){ var s = document.createElement('script'); s.src = 'enhance.js?v=7'; document.body.appendChild(s); }
   function idle(){ 'requestIdleCallback' in window ? requestIdleCallback(go, {timeout: 2500}) : setTimeout(go, 300); }
   document.readyState === 'complete' ? idle() : addEventListener('load', idle);
 })();
