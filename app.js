@@ -657,7 +657,7 @@ function artInfo(caption){
   const pi = parts.findIndex(x => /₹|rs\.?\s*\d|^sold$/i.test(x));
   const price = pi >= 0 ? parts.splice(pi,1)[0].replace(/^rs\.?\s*/i,'₹').replace(/₹\s*(\d{4,})(?![\d,])/g, (m, n) => inr(n)) : '';   // ₹2999 → ₹2,999
   // keep sizes such as "30 × 20 in" or "10 in diameter" on one line
-  const detail = parts.slice(1).join(' · ').replace(/(\d)\s*[×x]\s*(\d)/g, '$1\u00a0×\u00a0$2').replace(/(\d)\s+(in|cm)\b/g, '$1\u00a0$2');
+  const detail = parts.slice(1).join(' · ').replace(/(\d)\s+in\b/g, '$1 inches').replace(/(\d)\s*[×x]\s*(\d)/g, '$1\u00a0×\u00a0$2').replace(/(\d)\s+(inches|inch|cm)\b/g, '$1\u00a0$2');
   return { title: parts[0] || '', detail, price: /^sold$/i.test(price) ? (S.lang==='hi'?'बिक गया':'Sold') : price };
 }
 /* Groups artwork by words in its title, so no extra sheet column is needed. */
@@ -706,9 +706,89 @@ function artworkSection(){
     revealArt(grid);
   }
   fill();
-  return el('section',{class:'block art-block',id:'artwork'}, head, chips, grid,
+  // data-rb tells enhance.js not to add its own 3D carousel: this section has its own
+  return el('section',{class:'block art-block',id:'artwork','data-rb':'1'}, head, artCarousel(items), chips, grid,
     ig ? el('a',{class:'ig-strip',href:ig,target:'_blank',rel:'noopener',style:'margin-top:20px'}, igIcon(), el('span',null, hi?`और कलाकृतियाँ ${igHandle()} पर`:`More work and behind-the-scenes on ${igHandle()}`), el('b',null,'→')) : null);
 }
+/* Gallery-wall carousel: framed pieces, the centre one lit and larger, with title, size and price. */
+let carTimer = 0, carIO = null;
+function artCarousel(items){
+  clearInterval(carTimer); if (carIO) carIO.disconnect();
+  const hi = S.lang==='hi', list = items.slice(0, 12);
+  if (list.length < 3) return null;
+  const all = items.map(x => x.g);
+  const track = el('div',{class:'car-track',role:'list'});
+  const slides = list.map((x, j) => {
+    const a = x.a, sold = /^(sold|बिक गया)$/i.test(a.price);
+    const size = (a.detail.match(/\d[\d  ×x–-]* ?(inches|inch|cm)[^·]*/) || [''])[0].trim();
+    return el('div',{class:'car-slide',role:'listitem'},
+      el('button',{type:'button',class:'car-art',onclick:()=>{ if (slides[j].classList.contains('is-active')) openLightbox(x.i, all, true); else go(j); },'aria-label':(a.title||'Artwork')+(a.price?', '+a.price:'')},
+        el('span',{class:'car-frame'}, el('span',{class:'car-mat'}, driveImg(x.g.thumb,{alt:a.title||'',loading: j < 4 ? 'eager' : 'lazy'})))),
+      el('div',{class:'car-cap'},
+        el('b',null,a.title),
+        size ? el('small',null,size) : null,
+        a.price ? el('span',{class:'car-price'+(sold?' sold':'')}, a.price) : null));
+  });
+  track.append(...slides);
+  const dots = el('div',{class:'car-dots'}, list.map((_, j) => el('button',{type:'button','aria-label':(hi?'कलाकृति ':'Artwork ')+(j+1),onclick:()=>go(j)})));
+  let cur = 0;
+  const center = j => slides[j].offsetLeft + slides[j].offsetWidth/2 - track.clientWidth/2;
+  function go(j, smooth = true){ cur = (j + slides.length) % slides.length; track.scrollTo({left:center(cur), behavior: smooth && !REDUCE_MOTION.matches ? 'smooth' : 'auto'}); }
+  function mark(){
+    const mid = track.scrollLeft + track.clientWidth/2; let best = 0, bd = 1e9;
+    slides.forEach((sl, j) => { const d = Math.abs(sl.offsetLeft + sl.offsetWidth/2 - mid); if (d < bd) { bd = d; best = j; } });
+    cur = best; slides.forEach((sl, j) => sl.classList.toggle('is-active', j===best));
+    [...dots.children].forEach((d, j) => d.setAttribute('aria-current', String(j===best)));
+  }
+  let raf = 0; track.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; mark(); }); }, {passive:true});
+  const arrow = (dir, label, path) => el('button',{type:'button',class:'car-arrow '+(dir<0?'prev':'next'),'aria-label':label,onclick:()=>{ go(cur+dir); pause(); },html:`<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="${path}"/></svg>`});
+  // moves on by itself every 4.5 s while on screen; stops for good once the visitor takes over
+  let userTook = false, onScreen = false;
+  const pause = () => { userTook = true; clearInterval(carTimer); };
+  const auto = () => { clearInterval(carTimer); if (!userTook && onScreen && !REDUCE_MOTION.matches) carTimer = setInterval(() => { if (!document.hidden) go(cur+1); }, 4500); };
+  ['pointerdown','wheel','touchstart','keydown'].forEach(ev => track.addEventListener(ev, pause, {passive:true}));
+  const wrap = el('div',{class:'car',tabindex:'-1'},
+    el('div',{class:'car-wall'}, track, arrow(-1, hi?'पिछली':'Previous', 'M15 5l-7 7 7 7'), arrow(1, hi?'अगली':'Next', 'M9 5l7 7-7 7')), dots,
+    el('p',{class:'car-hint'}, hi?'खिसकाइए या तीर दबाइए · बड़ा देखने के लिए बीच वाली पर टैप करें':'Swipe or use the arrows · tap the centre piece to see it large'));
+  wrap.addEventListener('keydown', e => { if (e.key==='ArrowRight'){ go(cur+1); pause(); } if (e.key==='ArrowLeft'){ go(cur-1); pause(); } });
+  if ('IntersectionObserver' in window){ carIO = new IntersectionObserver(es => { onScreen = es[0].isIntersecting; onScreen ? auto() : clearInterval(carTimer); }, {threshold:0.4}); carIO.observe(wrap); }
+  requestAnimationFrame(() => requestAnimationFrame(() => { go(0, false); mark(); }));
+  let rs = 0; window.addEventListener('resize', () => { clearTimeout(rs); rs = setTimeout(() => { if (wrap.isConnected) go(cur, false); }, 150); });
+  return wrap;
+}
+(function(){ const st = document.createElement('style'); st.textContent = `
+.car{margin:6px 0 30px;outline:none}
+.car-wall{position:relative;margin:0 calc(50% - 50vw);padding:34px 0 18px;background:radial-gradient(120% 90% at 50% 0%,#f6efe5 0%,#efe4d4 55%,#e8dac6 100%);box-shadow:inset 0 10px 18px -14px rgba(60,30,10,.35),inset 0 -10px 18px -14px rgba(60,30,10,.25)}
+.car-track{display:flex;gap:clamp(18px,3vw,40px);overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:18px calc(50vw - clamp(120px,15vw,170px)) 8px;align-items:flex-start}
+.car-track::-webkit-scrollbar{display:none}
+.car-slide{flex:none;width:clamp(240px,30vw,340px);scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .5s;opacity:.55;transform:scale(.86)}
+.car-slide.is-active{opacity:1;transform:scale(1)}
+.car-art{display:block;width:100%;padding:0;border:0;background:none;cursor:pointer;position:relative}
+.car-slide.is-active .car-art::before{content:"";position:absolute;left:8%;right:8%;top:-34px;height:60px;background:radial-gradient(50% 100% at 50% 0%,rgba(255,240,205,.85),rgba(255,240,205,0));pointer-events:none}
+.car-frame{display:block;padding:10px;background:linear-gradient(145deg,#5a3a26,#3a2416 60%,#4d3120);border-radius:3px;box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 18px 30px -12px rgba(40,20,5,.55),0 4px 8px rgba(40,20,5,.2)}
+.car-mat{display:flex;align-items:center;justify-content:center;aspect-ratio:4/5;background:#fbf7f0;padding:9%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06),inset 2px 2px 6px rgba(0,0,0,.12)}
+.car-mat img{max-width:100%;max-height:100%;object-fit:contain;display:block;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.car-cap{margin-top:16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:84px;padding:0 6px}
+.car-cap b{font-family:var(--display);font-size:17px;line-height:1.25;color:var(--ink)}
+.car-cap small{font-size:13px;color:var(--muted)}
+.car-price{margin-top:4px;background:var(--geru);color:#fff;font-weight:800;font-size:13px;border-radius:99px;padding:4px 12px}
+.car-price.sold{background:var(--ink)}
+.car-arrow{position:absolute;top:calc(34px + 18px + clamp(240px,30vw,340px)*0.62);transform:translateY(-50%);width:48px;height:48px;border-radius:50%;border:0;background:rgba(255,255,255,.92);color:var(--ink);display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 18px rgba(40,20,5,.22)}
+.car-arrow:hover{background:#fff;color:var(--geru)}
+.car-arrow.prev{left:max(16px,calc(50% - 50vw + 24px))}
+.car-arrow.next{right:max(16px,calc(50% - 50vw + 24px))}
+.car-dots{display:flex;justify-content:center;gap:8px;margin-top:16px}
+.car-dots button{width:8px;height:8px;border-radius:99px;border:0;padding:0;background:#d8cbb9;cursor:pointer;transition:width .3s,background .3s}
+.car-dots button[aria-current="true"]{width:24px;background:var(--geru)}
+.car-hint{text-align:center;font-size:12.5px;color:var(--muted);margin:10px 0 0}
+@media (max-width:760px){
+  .car-slide{width:68vw}
+  .car-track{padding-inline:16vw}
+  .car-arrow{width:40px;height:40px;top:calc(34px + 18px + 68vw*0.62)}
+  .car-cap b{font-size:15.5px}
+}
+@media (prefers-reduced-motion:reduce){.car-slide{transition:none}}
+`; document.head.append(st); })();
 function revealArt(root){
   const cards = root.querySelectorAll('.art-item');
   if (!('IntersectionObserver' in window) || matchMedia('(prefers-reduced-motion: reduce)').matches) { cards.forEach(c => c.classList.add('in')); return; }
