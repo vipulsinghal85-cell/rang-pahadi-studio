@@ -332,6 +332,7 @@ function render(){
       fbUrl() ? el('a',{class:'footer-ig',href:fbUrl(),target:'_blank',rel:'noopener','aria-label':'Facebook'}, fbIcon(), ' Facebook') : null,
       S.updated ? el('span',{class:'updated'}, 'Calendar updated '+new Date(S.updated).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})) : null))
   ].filter(Boolean));
+  lockHeroText();
   updateStructuredData();
   waButton();
   setupCollapsible();
@@ -377,7 +378,9 @@ html,body{overflow-x:clip}
 @keyframes rpfloat{from{translate:0 0;rotate:0deg}to{translate:10px -14px;rotate:8deg}}
 /* hero: logo with the place name beside it */
 .hero-id{display:flex;align-items:center;gap:22px;margin-bottom:6px}
-.hero-id .hero-logo{margin-bottom:0;flex:none}
+.hero-id .hero-logo,.hero-id .rb-logo{margin-bottom:0;flex:none}   /* sticker logo (enhance.js) takes the plain logo's place without moving the hero */
+.hero-id .rb-logo{position:relative;width:132px;height:132px;transform:rotate(-6deg)}
+@media (max-width:760px){.hero-id .rb-logo{width:104px;height:104px}}
 .hero-place{display:flex;flex-direction:column;align-items:flex-start;gap:10px;min-width:0}
 .hero-place .eyebrow{opacity:1;letter-spacing:.14em}
 .hero-place .rule{display:block;width:56px;height:2px;background:#ffd27a;border-radius:2px}
@@ -1416,6 +1419,15 @@ function festivalBanner(){
         el('button',{type:'button',class:'fest-close','aria-label':'Hide',onclick:()=>{ try { sessionStorage.setItem('rp-fest-hide', f.key); } catch {} render(); }},'×'))));
 }
 
+/* enhance.js rebuilds the hero title, tagline and intro letter by letter. While it does, they are empty for a
+ * frame or two and everything below jumps up and back. Holding their drawn height stops that jump. */
+function lockHeroText(){
+  const els = [...document.querySelectorAll('.hero h1, .hero .sub, .hero p.lede')];
+  els.forEach(e => { e.style.minHeight = ''; });
+  els.forEach(e => { const h = e.offsetHeight; if (h) e.style.minHeight = h + 'px'; });
+}
+let lockT; window.addEventListener('resize', () => { clearTimeout(lockT); lockT = setTimeout(lockHeroText, 250); });
+
 /* ======================================================= Google events */
 let lastLD = '';
 function updateStructuredData(){
@@ -1466,19 +1478,29 @@ async function getData(){
     finally { clearTimeout(timer); }
   }
 }
+/* What the page shows, minus the "built at" time, so an unchanged Sheet doesn't redraw the page. */
+let shownData = '';
+const dataKey = d => { try { const { updated, ...rest } = d || {}; return JSON.stringify(rest); } catch { return ''; } };
 async function load(){
   if (!API) { apply(sampleData()); render(); return; }
   try {
     const data = await getData();
     if (!data.ok) throw new Error(data.error || 'bad');
-    apply(data); S.error = false;
     try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch {}
+    const key = dataKey(data);
+    if (key === shownData && S.loaded && !S.error) {   // same as on screen: just refresh the footer time
+      S.updated = data.updated || S.updated;
+      const u = document.querySelector('footer .updated');
+      if (u && S.updated) u.textContent = 'Calendar updated ' + new Date(S.updated).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'});
+      return;
+    }
+    apply(data); S.error = false; shownData = key;
   } catch { S.error = true; S.loaded = true; }
   render();
 }
 
 document.getElementById('langBtn')?.addEventListener('click', () => { S.lang = S.lang==='hi' ? 'en' : 'hi'; try { localStorage.setItem('rp-lang', S.lang); } catch {} render(); });
-try { const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); if (API && cached && cached.ok) apply(cached); } catch {}
+try { const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); if (API && cached && cached.ok) { apply(cached); shownData = dataKey(cached); } } catch {}
 render();
 load();
 setInterval(() => { if (!document.hidden && API && !document.getElementById('modalRoot').children.length) load(); }, 120000);
