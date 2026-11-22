@@ -24,7 +24,10 @@ const I18N = {
     mirror:'Mirror', fine:'Fine line', thick:'Thick line', dots:'Dots', guide:'Guide', undo:'Undo', clear:'Clear', save:'Save image', share:'Share',
     try_cta:'Liked it? Learn real Aipan with us.',
     tx_h:'Try texture art', tx_sub:'Press and pull with the palette knife. The paste rises off the canvas and catches the light, just like the real thing.', tx_cta:'Liked it? Make a real textured canvas with us.',
-    knife:'Palette knife', petal:'Petal', spread:'Spread', colour:'Colour',
+    knife:'Tool', petal:'Petal', leaf:'Leaf', spread:'Spread', carve:'Carve', drybrush:'Dry brush', colour:'Colour', size:'Size', canvas:'Canvas',
+    sz_s:'Small', sz_m:'Medium', sz_l:'Large', base_cream:'Cream', base_charcoal:'Charcoal', base_blush:'Blush', redo:'Redo', sample:'Try a sample', tilt:'Tilt the light',
+    tip_petal:'Press at the tip, then pull towards the centre.', tip_leaf:'One smooth pull: it widens, then tapers to a point.', tip_spread:'Sweep wide strokes for the background.',
+    tip_dots:'Tap or drag for raised dots.', tip_carve:'Scratch lines into paste you have laid.', tip_drybrush:'Brush lightly: colour catches only on the raised edges.',
     reviews_h:'What students say', reviews_none:'Be the first to share your experience.', write_review:'Write a review', google_review:'Review us on Google',
     gift_h:'Give the gift of art', gift_sub:'For birthdays, Diwali, Rakhi or just because.',
     voucher:'Gift voucher', voucher_d:'Any amount, good for any workshop. You get a voucher card ready to send.',
@@ -54,7 +57,10 @@ const I18N = {
     mirror:'दर्पण', fine:'पतली रेखा', thick:'मोटी रेखा', dots:'बिंदु', guide:'गाइड', undo:'वापस', clear:'साफ़ करें', save:'तस्वीर सेव करें', share:'शेयर करें',
     try_cta:'पसंद आया? हमारे साथ असली ऐपण सीखिए।',
     tx_h:'टेक्सचर आर्ट आज़माइए', tx_sub:'पैलेट नाइफ़ से दबाइए और खींचिए। पेस्ट कैनवास से उभरता है और रोशनी पकड़ता है, बिल्कुल असली की तरह।', tx_cta:'पसंद आया? हमारे साथ असली टेक्सचर कैनवास बनाइए।',
-    knife:'पैलेट नाइफ़', petal:'पंखुड़ी', spread:'फैलाएँ', colour:'रंग',
+    knife:'औज़ार', petal:'पंखुड़ी', leaf:'पत्ती', spread:'फैलाएँ', carve:'खुरचें', drybrush:'सूखा ब्रश', colour:'रंग', size:'आकार', canvas:'कैनवास',
+    sz_s:'छोटा', sz_m:'मध्यम', sz_l:'बड़ा', base_cream:'क्रीम', base_charcoal:'काला', base_blush:'गुलाबी', redo:'फिर करें', sample:'नमूना देखिए', tilt:'रोशनी घुमाइए',
+    tip_petal:'सिरे पर दबाइए, फिर बीच की ओर खींचिए।', tip_leaf:'एक बार में खींचिए: पत्ती चौड़ी होकर नुकीली हो जाती है।', tip_spread:'पृष्ठभूमि के लिए चौड़े स्ट्रोक फैलाइए।',
+    tip_dots:'उभरे बिंदुओं के लिए टैप या ड्रैग कीजिए।', tip_carve:'लगाए हुए पेस्ट में रेखाएँ खुरचिए।', tip_drybrush:'हल्के हाथ से चलाइए: रंग सिर्फ़ उभरे किनारों पर लगता है।',
     reviews_h:'विद्यार्थी क्या कहते हैं', reviews_none:'अपना अनुभव साझा करने वाले पहले व्यक्ति बनिए।', write_review:'समीक्षा लिखें', google_review:'Google पर समीक्षा दें',
     gift_h:'कला का उपहार दीजिए', gift_sub:'जन्मदिन, दिवाली, राखी या बस यूँ ही।',
     voucher:'गिफ़्ट वाउचर', voucher_d:'कोई भी राशि, किसी भी कार्यशाला के लिए। भेजने के लिए तैयार वाउचर कार्ड मिलेगा।',
@@ -1030,11 +1036,14 @@ function buildAipan(){
 }
 
 /* ================================================ Try Texture Art canvas
- * Palette-knife paste on a canvas, simulated as height: each stroke raises the surface, and the
- * surface is lit from the top left so ridges catch the light like real texture paste. */
+ * Palette-knife paste on a canvas, simulated as height: each stroke raises (or carves) the surface,
+ * and the surface is lit from the top left so ridges catch the light like real texture paste. */
 let textureNode = null;
-const TX = { strokes:[], tool:'petal', color:'blush', guide:true };
-const TX_COLORS = { white:['#f7f2ea','White','सफ़ेद'], blush:['#e6a7a2','Blush pink','गुलाबी'], sage:['#9db897','Sage green','हल्का हरा'], ochre:['#d4a046','Ochre','गेरुआ'], teal:['#3d8789','Teal','फ़िरोज़ी'], gold:['#c9a043','Gold','सुनहरा'] };
+const TX = { strokes:[], redo:[], cleared:null, tool:'petal', color:'blush', size:1, base:'cream', guide:true };
+const TX_COLORS = { white:['#f7f2ea','White','सफ़ेद'], blush:['#e6a7a2','Blush pink','गुलाबी'], sage:['#9db897','Sage green','हल्का हरा'], ochre:['#d4a046','Ochre','गेरुआ'],
+  teal:['#3d8789','Teal','फ़िरोज़ी'], terracotta:['#a8452b','Terracotta','टेराकोटा'], charcoal:['#302e34','Charcoal','काला'], gold:['#c9a043','Gold','सुनहरा'] };
+const TX_BASES = { cream:[241,235,224], charcoal:[48,46,50], blush:[236,212,205] };
+const TX_TOOLS = ['petal','leaf','spread','dots','carve','drybrush'];
 function textureSection(){
   if (!textureNode) textureNode = buildTexture();
   textureNode.querySelectorAll('[data-i18n]').forEach(n => { n.textContent = t(n.dataset.i18n); });
@@ -1054,27 +1063,42 @@ function buildTexture(){
   }
   const hex = h => [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)];
   let seq = 0;
-  function reset(){ H.set(WEAVE); R.fill(241); G.fill(235); B.fill(224); M.fill(0); SID.fill(0); }
+  function reset(){ const c = TX_BASES[TX.base]; H.set(WEAVE); R.fill(c[0]); G.fill(c[1]); B.fill(c[2]); M.fill(0); SID.fill(0); }
   const sm = (a,b,x) => { const t = Math.min(1, Math.max(0, (x-a)/(b-a))); return t*t*(3-2*t); };
   const hash = n => { const v = Math.sin(n*127.1)*43758.5453; return v - Math.floor(v); };
   const noise = x => { const i = Math.floor(x), f = x - i, u = f*f*(3-2*f); return hash(i)*(1-u) + hash(i+1)*u; };   // smooth, irregular 1-D noise
+  const union = (a, b) => !a ? b : !b ? a : [Math.min(a[0],b[0]),Math.min(a[1],b[1]),Math.max(a[2],b[2]),Math.max(a[3],b[3])];
 
-  // one dab of paste; returns its bounding box
-  function stamp(cx, cy, dx, dy, r, th, col, tool, id, metal){
+  // one dab of paste (or one scrape of the carving tool / one sweep of the dry brush); returns its bounding box
+  function stamp(cx, cy, dx, dy, r, th, col, tool, id, metal, seed){
     const x0 = Math.max(1, Math.floor(cx-r-1)), x1 = Math.min(W-2, Math.ceil(cx+r+1));
     const y0 = Math.max(1, Math.floor(cy-r-1)), y1 = Math.min(W-2, Math.ceil(cy+r+1));
-    const along = tool==='spread' ? 0.42 : 0.55, mix = tool==='spread' ? 0.55 : 0.85;
+    const along = tool==='spread' ? 0.42 : tool==='drybrush' ? 0.5 : 0.55, mix = tool==='spread' ? 0.55 : 0.85;
     for (let y=y0;y<=y1;y++) for (let x=x0;x<=x1;x++){
-      const ox = x-cx, oy = y-cy, u = ox*dx + oy*dy, v = -ox*dy + oy*dx;
+      const ox = x-cx, oy = y-cy, u = ox*dx + oy*dy, v = -ox*dy + oy*dx, i = y*W+x;
+      if (tool==='drybrush'){   // colour only where the paste stands up, in broken bristle streaks
+        const d = Math.hypot(u/(r*along), v/r); if (d>=1) continue;
+        const raised = H[i] - WEAVE[i]; if (raised < 0.1) continue;
+        const a = sm(0.1,0.45,raised) * (1 - sm(0.55,1,d)) * sm(0.42,0.78, noise(v*0.9 + seed*7.1)) * sm(0.2,0.6, noise(u*0.15 + v*0.05 + seed)) * 0.75;   // broken, scratchy bristle marks
+        R[i] += (col[0]-R[i])*a; G[i] += (col[1]-G[i])*a; B[i] += (col[2]-B[i])*a;
+        if (a > 0.22 && metal) M[i] = 1;
+        continue;
+      }
+      if (SID[i] !== id){ SID[i] = id; UNDER[i] = H[i]; }
+      if (tool==='carve'){      // scrape a groove into the paste, never below the canvas
+        const d = Math.hypot(u/(r*0.6), v/r); if (d>=1) continue;
+        if (d < 0.6){ const h = Math.max(WEAVE[i]*0.6, UNDER[i] - th*(1 - sm(0.15,0.6,d))); if (h < H[i]) H[i] = h; }
+        else if (UNDER[i] - WEAVE[i] > 0.1){ const h = UNDER[i] + 0.16*sm(0.6,0.75,d)*(1 - sm(0.8,1,d)); if (h > H[i]) H[i] = h; }   // paste pushed up beside the groove
+        continue;
+      }
       let d, p;
       if (tool==='dots'){ d = Math.hypot(ox,oy)/r; if (d>=1) continue; p = Math.sqrt(1-d*d); }
       else {
         d = Math.hypot(u/(r*along), v/r); if (d>=1) continue;
-        p = 1 - sm(tool==='spread' ? 0.6 : 0.7, 1, d);                                  // flat-topped paste with soft edges
-        p *= 1 + (tool==='spread' ? 0.2 : 0.12) * (noise(v*0.2 + id*13.7) - 0.5) * 2;  // uneven drag lines along the stroke
+        p = 1 - sm(tool==='spread' ? 0.6 : tool==='leaf' ? 0.65 : 0.7, 1, d);           // flat-topped paste with soft edges
+        p *= 1 + (tool==='spread' ? 0.2 : tool==='leaf' ? 0.08 : 0.12) * (noise(v*0.2 + seed*13.7) - 0.5) * 2;   // uneven drag lines
+        if (tool==='leaf') p *= 1 - 0.35*Math.exp(-(v*v)/(r*r*0.012));                   // the leaf's centre vein
       }
-      const i = y*W+x;
-      if (SID[i] !== id){ SID[i] = id; UNDER[i] = H[i]; }
       const h = WEAVE[i]*0.2 + (UNDER[i]-WEAVE[i])*0.45 + th*p;   // paste covers the weave; earlier paste still shows a little
       if (h > H[i]) H[i] = h;
       const a = sm(0, 0.18, p) * mix;
@@ -1085,33 +1109,44 @@ function buildTexture(){
   }
   // feeds one stroke's points in order; live drawing and replay use the same steps, so undo redraws identically
   function runner(s){
-    const st = { id: ++seq, last:null, dist:0, carry:0 }, col = hex(TX_COLORS[s.color][0]), metal = s.color==='gold';
-    const sp = s.tool==='dots' ? 22 : 2;
+    const st = { id: ++seq, last:null, dist:0, carry:0 }, col = hex(TX_COLORS[s.color][0]), metal = s.color==='gold', m = s.size || 1, sd = s.seed || 0;
+    const sp = s.tool==='dots' ? 22*m : 2;
     const dab = (x, y, dx, dy, dist) => {
-      if (s.tool==='dots') return stamp(x, y, 1, 0, 12, 1.0, col, 'dots', st.id, metal);
-      if (s.tool==='spread') return stamp(x, y, dx, dy, 34, 0.42, col, 'spread', st.id, metal);
-      const f = Math.max(0, 1 - dist/150);                                                  // petal: thick blob at the press, thinning as it pulls
-      return stamp(x, y, dx, dy, 4 + 22*Math.pow(f, 0.8), 0.3 + 0.85*f, col, 'petal', st.id, metal);
+      switch (s.tool){
+        case 'dots': return stamp(x, y, 1, 0, 12*m, 1.0, col, 'dots', st.id, metal, sd);
+        case 'spread': return stamp(x, y, dx, dy, 34*m, 0.42, col, 'spread', st.id, metal, sd);
+        case 'carve': return stamp(x, y, dx, dy, 8*m, 0.85, col, 'carve', st.id, metal, sd);
+        case 'drybrush': return stamp(x, y, dx, dy, 24*m, 0, col, 'drybrush', st.id, metal, sd);
+        case 'leaf': { const w = Math.sin(Math.PI*Math.min(1, dist/(130*m)));                 // widens, then tapers to a point
+          return stamp(x, y, dx, dy, (3 + 17*w)*m, 0.32 + 0.55*w, col, 'leaf', st.id, metal, sd); }
+        default: { const f = Math.max(0, 1 - dist/(150*m));                                    // petal: thick at the press, thinning as it pulls
+          return stamp(x, y, dx, dy, (4 + 22*Math.pow(f, 0.8))*m, 0.3 + 0.85*f, col, 'petal', st.id, metal, sd); }
+      }
     };
     const feed = p => {
-      if (!st.last){ st.last = p; if (s.tool==='dots') return dab(p[0], p[1], 1, 0, 0); st.pending = true; return null; }   // knife: wait for the pull direction
+      if (!st.last){ st.last = p; if (s.tool==='dots') return dab(p[0], p[1], 1, 0, 0); st.pending = true; return null; }   // others wait for the pull direction
       const lx = p[0]-st.last[0], ly = p[1]-st.last[1], len = Math.hypot(lx, ly);
       if (len < 0.5) return null;
       const dx = lx/len, dy = ly/len; let box = null, d = sp - st.carry;
       if (st.pending){ st.pending = false; box = dab(st.last[0], st.last[1], dx, dy, 0); }
-      for (; d <= len; d += sp){
-        const b = dab(st.last[0]+dx*d, st.last[1]+dy*d, dx, dy, st.dist+d);
-        box = box ? [Math.min(box[0],b[0]),Math.min(box[1],b[1]),Math.max(box[2],b[2]),Math.max(box[3],b[3])] : b;
-      }
+      for (; d <= len; d += sp) box = union(box, dab(st.last[0]+dx*d, st.last[1]+dy*d, dx, dy, st.dist+d));
       st.carry = len - (d - sp); st.dist += len; st.last = p;
       return box;
     };
-    feed.finish = () => { if (st.pending){ st.pending = false; const b = st.last; return stamp(b[0], b[1], 1, 0, 14, 0.9, col, 'dots', st.id, metal); } return null; };   // a tap without a pull leaves a small mound
+    feed.finish = () => {   // a tap without a pull leaves a small mound (paste tools only)
+      if (!st.pending) return null; st.pending = false;
+      if (s.tool==='carve' || s.tool==='drybrush') return null;
+      return stamp(st.last[0], st.last[1], 1, 0, 14*m, 0.9, col, 'dots', st.id, metal, sd);
+    };
     return feed;
   }
-  // light from the top left; paste is satin, gold is metallic
-  const L = (() => { const v = [-0.55,-0.62,0.56], n = Math.hypot(...v); return v.map(x => x/n); })();
-  const HV = (() => { const v = [L[0], L[1], L[2]+1], n = Math.hypot(...v); return v.map(x => x/n); })();
+  const applyStroke = s => { const run = runner(s); let box = null; for (const p of s.pts) box = union(box, run(p)); return union(box, run.finish()); };
+
+  // light from the top left by default; "Tilt the light" swings it round. Paste is satin, gold is metallic
+  let L, HV;
+  function setLight(az){ const el_ = 0.6; L = [Math.cos(el_)*Math.cos(az), Math.cos(el_)*Math.sin(az), Math.sin(el_)];
+    const h = [L[0], L[1], L[2]+1], n = Math.hypot(...h); HV = h.map(x => x/n); }
+  const HOME_AZ = -2.3; setLight(HOME_AZ);
   function shade(x0, y0, x1, y1){
     x0 = Math.max(1, x0-2); y0 = Math.max(1, y0-2); x1 = Math.min(W-2, x1+2); y1 = Math.min(W-2, y1+2);
     for (let y=y0;y<=y1;y++) for (let x=x0;x<=x1;x++){
@@ -1126,24 +1161,66 @@ function buildTexture(){
     }
     ctx.putImageData(img, 0, 0, x0, y0, x1-x0+1, y1-y0+1);
   }
-  function redrawAll(){ reset(); for (const s of TX.strokes){ const run = runner(s); s.pts.forEach(run); run.finish(); } shade(1, 1, W-2, W-2); }
+  const shadeAll = () => shade(1, 1, W-2, W-2);
+  function redrawAll(){ reset(); for (const s of TX.strokes) applyStroke(s); shadeAll(); }
   for (let i=0;i<N;i++) px[i*4+3] = 255;
 
-  let cur = null, run = null, dirty = null, raf = 0;
-  const addDirty = b => { if (!b) return; dirty = dirty ? [Math.min(dirty[0],b[0]),Math.min(dirty[1],b[1]),Math.max(dirty[2],b[2]),Math.max(dirty[3],b[3])] : b.slice();
+  let cur = null, run = null, dirty = null, raf = 0, busy = false;
+  const addDirty = b => { if (!b) return; dirty = union(dirty, b.slice());
     if (!raf) raf = requestAnimationFrame(() => { raf = 0; const d = dirty; dirty = null; if (d) shade(...d); }); };
   const pos = e => { const r = canvas.getBoundingClientRect(); return [(e.clientX-r.left)*W/r.width, (e.clientY-r.top)*W/r.height]; };
-  canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); cur = { tool:TX.tool, color:TX.color, pts:[] }; run = runner(cur); const p = pos(e); cur.pts.push(p); addDirty(run(p)); e.preventDefault(); });
+  const commit = s => { TX.strokes.push(s); TX.redo = []; TX.cleared = null; };
+  canvas.addEventListener('pointerdown', e => { if (busy) return; canvas.setPointerCapture(e.pointerId); cur = { tool:TX.tool, color:TX.color, size:TX.size, seed: Math.floor(Math.random()*1000), pts:[] }; run = runner(cur); const p = pos(e); cur.pts.push(p); addDirty(run(p)); e.preventDefault(); });
   canvas.addEventListener('pointermove', e => { if (!cur) return; for (const ev of (e.getCoalescedEvents ? e.getCoalescedEvents() : [e])){ const p = pos(ev); cur.pts.push(p); addDirty(run(p)); } });
-  const end = () => { if (cur){ addDirty(run.finish()); TX.strokes.push(cur); cur = null; run = null; } };
+  const end = () => { if (cur){ addDirty(run.finish()); commit(cur); cur = null; run = null; } };
   canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
+
+  function undo(){ if (busy) return; if (TX.strokes.length) TX.redo.push(TX.strokes.pop()); else if (TX.cleared){ TX.strokes = TX.cleared; TX.cleared = null; } else return; redrawAll(); }
+  function redo(){ if (busy || !TX.redo.length) return; const s = TX.redo.pop(); TX.strokes.push(s); addDirty(applyStroke(s)); }
+  function clear(){ if (busy || !TX.strokes.length) return; TX.cleared = TX.strokes; TX.strokes = []; TX.redo = []; redrawAll(); }   // Undo brings it back
+
+  // "Try a sample": a flowering branch on the guide's layout, painted stroke by stroke
+  function sampleStrokes(){
+    const line = (a, b, n = 12) => Array.from({length:n+1}, (_, k) => [a[0]+(b[0]-a[0])*k/n, a[1]+(b[1]-a[1])*k/n]);
+    const bez = (p0, p1, p2, p3, n) => Array.from({length:n+1}, (_, k) => { const t = k/n, u = 1-t;
+      return [u*u*u*p0[0]+3*u*u*t*p1[0]+3*u*t*t*p2[0]+t*t*t*p3[0], u*u*u*p0[1]+3*u*u*t*p1[1]+3*u*t*t*p2[1]+t*t*t*p3[1]]; });
+    const out = [], add = (tool, color, size, pts) => out.push({ tool, color, size, seed: out.length*37 % 1000, pts });
+    add('spread','terracotta',0.28, bez([70,540],[170,470],[230,400],[300,330],30).concat(bez([300,330],[370,260],[430,190],[540,90],30).slice(1)));
+    add('spread','terracotta',0.22, bez([300,330],[260,300],[220,290],[170,300],16));
+    add('spread','terracotta',0.22, bez([420,210],[450,250],[470,280],[470,330],16));
+    for (const [a, b] of [[[120,500],[60,450]], [[150,478],[190,540]], [[255,372],[205,345]], [[350,282],[400,322]], [[395,232],[352,182]], [[490,150],[545,170]], [[205,302],[215,250]]]) add('leaf','sage',0.75, line(a, b));
+    [[165,300,'blush'], [300,250,'white'], [470,335,'blush'], [430,140,'white'], [220,430,'blush'], [540,90,'white']].forEach(([cx, cy, c], f) => {
+      const n = 5, rad = cy===90 ? 28 : 46, sz = cy===90 ? 0.6 : 0.9;
+      for (let k=0;k<n;k++){ const a = k*2*Math.PI/n + f*0.6; add('petal', c, sz, line([cx+rad*Math.cos(a), cy+rad*Math.sin(a)], [cx+7*Math.cos(a), cy+7*Math.sin(a)], 14)); }
+      add('dots','gold',0.7,[[cx,cy]]);
+    });
+    add('drybrush','gold',1, line([120,270],[330,250],20)); add('drybrush','gold',1, line([430,330],[500,350],10));
+    return out;
+  }
+  function sample(){
+    if (busy) return; busy = true; TX.redo = []; TX.cleared = null;
+    const queue = sampleStrokes();
+    const step = () => { for (let k=0; k<2 && queue.length; k++){ const s = queue.shift(); TX.strokes.push(s); addDirty(applyStroke(s)); }
+      if (queue.length) requestAnimationFrame(step); else busy = false; };
+    step();
+  }
+  // "Tilt the light": swing the light once round the canvas, like turning a real textured piece in your hands
+  function tilt(){
+    if (busy) return; busy = true; const t0 = performance.now(), dur = 2600;
+    const frame = now => { const k = Math.min(1, (now - t0)/dur), e = k<0.5 ? 2*k*k : 1 - Math.pow(-2*k+2, 2)/2;
+      setLight(HOME_AZ + e*2*Math.PI); shadeAll();
+      if (k < 1) requestAnimationFrame(frame); else { setLight(HOME_AZ); shadeAll(); busy = false; } };
+    requestAnimationFrame(frame);
+  }
 
   // pencil layout like the workshop's: a branch line and flower centres
   const guide = el('div',{class:'tx-guide','aria-hidden':'true',html:'<svg viewBox="0 0 600 600" fill="none" stroke="#5a524b" stroke-width="2" stroke-dasharray="6 7" stroke-linecap="round"><path d="M70 540 C 170 470, 230 400, 300 330 S 430 190, 540 90"/><path d="M300 330 C 260 300, 220 290, 170 300"/><path d="M420 210 C 450 250, 470 280, 470 330"/><circle cx="165" cy="300" r="34"/><circle cx="300" cy="250" r="40"/><circle cx="470" cy="335" r="34"/><circle cx="430" cy="140" r="30"/><circle cx="220" cy="430" r="36"/><circle cx="540" cy="90" r="22"/></svg>'});
   const frame = el('div',{class:'tx-frame'}, canvas, guide);
-  const showGuide = () => { guide.style.display = TX.guide ? '' : 'none'; };
+  const showGuide = () => { guide.style.display = TX.guide ? '' : 'none'; guide.classList.toggle('on-dark', TX.base==='charcoal'); };
 
+  const tip = el('p',{class:'tx-tip'}, el('span',{'data-i18n':'tip_'+TX.tool},t('tip_'+TX.tool)));
   const seg = (items, get, set) => el('div',{class:'ap-seg'}, items.map(([v,key]) => { const b = el('button',{type:'button','aria-pressed':get()===v,onclick:()=>{ set(v); b.parentNode.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed', x===b)); }}, el('span',{'data-i18n':key},t(key))); return b; }));
+  const setTool = v => { TX.tool = v; const s = tip.firstChild; s.dataset.i18n = 'tip_'+v; s.textContent = t('tip_'+v); };
   const swatches = el('div',{class:'tx-swatches'}, Object.entries(TX_COLORS).map(([k,[c,en]]) => { const b = el('button',{type:'button','data-color':k,'aria-label':en,title:en,'aria-pressed':TX.color===k,style:`--sw:${c}`,class: k==='gold' ? 'gold' : null,onclick:()=>{ TX.color = k; b.parentNode.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed', x===b)); }}); return b; }));
   const getBlob = () => new Promise(r => canvas.toBlob(r,'image/png'));
   const saveBtn = el('button',{type:'button',class:'btn btn-primary',onclick:async()=>{
@@ -1152,6 +1229,7 @@ function buildTexture(){
     try { const file = new File([await getBlob()],'my-texture-art.png',{type:'image/png'});
       if (navigator.canShare({files:[file]})) await navigator.share({files:[file], title:'My texture art', text:`I made this texture art on ${studioName()}'s website! ${siteUrl()}`}); } catch {} }}, el('span',{'data-i18n':'share'},t('share'))) : null;
   const textureWS = () => upcoming().find(w => w.category==='Mixed media & texture' && seatsLeft(w)>0);
+  const small = (key, fn) => el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:fn}, el('span',{'data-i18n':key},t(key)));
 
   const node = el('section',{class:'block aipan texture',id:'try-texture'},
     el('div',{class:'ap-text'},
@@ -1159,13 +1237,18 @@ function buildTexture(){
       el('h2',{'data-i18n':'tx_h'},t('tx_h')), el('p',{class:'desc','data-i18n':'tx_sub'},t('tx_sub')),
       el('div',{class:'ap-tools'},
         el('div',{class:'ap-label'}, el('span',{'data-i18n':'knife'},t('knife'))),
-        seg([['petal','petal'],['spread','spread'],['dots','dots']], ()=>TX.tool, v=>{TX.tool=v;}),
+        seg(TX_TOOLS.map(k => [k,k]), ()=>TX.tool, setTool), tip,
+        el('div',{class:'tx-row'},
+          el('div',null, el('div',{class:'ap-label'}, el('span',{'data-i18n':'size'},t('size'))),
+            seg([[0.7,'sz_s'],[1,'sz_m'],[1.35,'sz_l']], ()=>TX.size, v=>{TX.size=v;})),
+          el('div',null, el('div',{class:'ap-label'}, el('span',{'data-i18n':'canvas'},t('canvas'))),
+            seg([['cream','base_cream'],['charcoal','base_charcoal'],['blush','base_blush']], ()=>TX.base, v=>{ if (busy) return; TX.base=v; showGuide(); redrawAll(); }))),
         el('div',{class:'ap-label'}, el('span',{'data-i18n':'colour'},t('colour'))),
         swatches,
         el('div',{class:'actions',style:'justify-content:flex-start'},
-          el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>{TX.guide=!TX.guide;showGuide();}}, el('span',{'data-i18n':'guide'},t('guide'))),
-          el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>{TX.strokes.pop();redrawAll();}}, el('span',{'data-i18n':'undo'},t('undo'))),
-          el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>{TX.strokes=[];redrawAll();}}, el('span',{'data-i18n':'clear'},t('clear'))))),
+          small('guide', ()=>{TX.guide=!TX.guide;showGuide();}), small('undo', undo), small('redo', redo), small('clear', clear)),
+        el('div',{class:'actions',style:'justify-content:flex-start'},
+          small('sample', sample), small('tilt', tilt))),
       el('div',{class:'actions',style:'justify-content:flex-start;margin-top:16px'}, saveBtn, shareBtn),
       el('p',{class:'ap-cta'}, el('span',{'data-i18n':'tx_cta'},t('tx_cta')),' ',
         el('button',{type:'button',class:'quiz-link',onclick:()=>{ const w = textureWS(); if (w) openBooking(w); else { S.cat='Mixed media & texture'; render(); document.getElementById('calendar').scrollIntoView({behavior:'smooth'}); } }}, el('b',null,el('span',{'data-i18n':'book'},t('book')),' →')))),
@@ -1177,7 +1260,11 @@ function buildTexture(){
 .tx-frame{position:relative;width:100%;max-width:520px;aspect-ratio:1}
 .tx-canvas{display:block;width:100%;height:100%;border-radius:6px;touch-action:none;cursor:crosshair;background:#f1ebe0;box-shadow:0 0 0 1px rgba(0,0,0,.06),7px 7px 0 #e2d6c5,0 20px 40px rgba(60,20,0,.18)}
 .tx-guide{position:absolute;inset:0;pointer-events:none;opacity:.32}
+.tx-guide.on-dark{filter:invert(1);opacity:.4}
 .tx-guide svg{width:100%;height:100%;display:block}
+.tx-tip{margin:-2px 0 0;font-size:13px;color:var(--muted);min-height:1.4em}
+.tx-row{display:flex;flex-wrap:wrap;gap:12px 22px}
+.tx-row > div{display:flex;flex-direction:column;gap:8px}
 .tx-swatches{display:flex;flex-wrap:wrap;gap:8px}
 .tx-swatches button{width:34px;height:34px;border-radius:50%;border:3px solid var(--paper);background:var(--sw);box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}
 .tx-swatches button.gold{background:linear-gradient(135deg,#f3dc8a,#c9a043 45%,#8f6b1f 75%,#e9cf7a)}
