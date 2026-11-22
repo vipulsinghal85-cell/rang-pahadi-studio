@@ -737,7 +737,7 @@ function artCarousel(items){
   function mark(){
     const mid = track.scrollLeft + track.clientWidth/2; let best = 0, bd = 1e9;
     slides.forEach((sl, j) => { const d = Math.abs(sl.offsetLeft + sl.offsetWidth/2 - mid); if (d < bd) { bd = d; best = j; } });
-    cur = best; slides.forEach((sl, j) => sl.classList.toggle('is-active', j===best));
+    cur = best; slides.forEach((sl, j) => { sl.classList.toggle('is-active', j===best); sl.classList.toggle('is-left', j < best); sl.classList.toggle('is-right', j > best); sl.classList.toggle('is-near', Math.abs(j-best)===1); });
     [...dots.children].forEach((d, j) => d.setAttribute('aria-current', String(j===best)));
   }
   let raf = 0; track.addEventListener('scroll', () => { if (!raf) raf = requestAnimationFrame(() => { raf = 0; mark(); }); }, {passive:true});
@@ -759,15 +759,22 @@ function artCarousel(items){
 (function(){ const st = document.createElement('style'); st.textContent = `
 .car{margin:6px 0 30px;outline:none}
 .car-wall{position:relative;margin:0 calc(50% - 50vw);padding:26px 0 14px;background:linear-gradient(180deg,rgba(246,230,223,0) 0%,#f6ece4 18%,#f6ece4 82%,rgba(246,230,223,0) 100%)}
-.car-track{display:flex;gap:clamp(18px,3vw,40px);overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:18px calc(50vw - clamp(120px,15vw,170px)) 8px;align-items:flex-start}
+.car-track{perspective:1400px;display:flex;gap:clamp(18px,3vw,40px);overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:18px calc(50vw - clamp(120px,15vw,170px)) 8px;align-items:flex-start}
 .car-track::-webkit-scrollbar{display:none}
 .car-slide{flex:none;width:clamp(240px,28vw,320px);scroll-snap-align:center;display:flex;flex-direction:column;align-items:center;transition:transform .5s cubic-bezier(.2,.8,.2,1),opacity .5s;opacity:.6;transform:scale(.88)}
-.car-slide.is-active{opacity:1;transform:scale(1)}
+.car-slide.is-left{transform:scale(.86) rotateY(26deg);transform-origin:right center}
+.car-slide.is-right{transform:scale(.86) rotateY(-26deg);transform-origin:left center}
+.car-slide.is-near{opacity:.72}
+.car-slide.is-active{opacity:1;transform:scale(1) rotateY(0)}
 .car-art{display:block;width:100%;padding:0;border:0;background:none;cursor:pointer;position:relative}
-.car-photo{display:block;aspect-ratio:4/5;border-radius:18px;overflow:hidden;background:#efe6da;box-shadow:0 22px 40px -18px rgba(60,30,10,.55),0 4px 10px rgba(60,30,10,.12);transition:box-shadow .5s}
+.car-photo{position:relative;display:block;aspect-ratio:4/5;border-radius:18px;overflow:hidden;background:#efe6da;box-shadow:0 22px 40px -18px rgba(60,30,10,.55),0 4px 10px rgba(60,30,10,.12);transition:box-shadow .5s}
 .car-photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .8s cubic-bezier(.2,.8,.2,1)}
 .car-slide.is-active .car-photo{box-shadow:0 30px 50px -18px rgba(60,30,10,.6),0 0 0 4px #fff,0 0 0 5px rgba(155,58,34,.25)}
 .car-art:hover .car-photo img{transform:scale(1.04)}
+.car-photo::after{content:"";position:absolute;inset:-20%;background:linear-gradient(115deg,transparent 38%,rgba(255,250,235,.0) 42%,rgba(255,250,235,.42) 50%,rgba(255,250,235,0) 58%,transparent 62%);transform:translateX(-120%);pointer-events:none}
+.car-slide.is-active .car-photo::after{animation:carSheen 5.5s ease-in-out 1s infinite}
+@keyframes carSheen{0%{transform:translateX(-120%)}28%,100%{transform:translateX(120%)}}
+.car-slide.is-left .car-photo,.car-slide.is-right .car-photo{box-shadow:0 16px 30px -18px rgba(60,30,10,.5)}
 .car-cap{margin-top:16px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:84px;padding:0 6px}
 .car-cap b{font-family:var(--display);font-size:17px;line-height:1.25;color:var(--ink)}
 .car-cap small{font-size:13px;color:var(--muted)}
@@ -787,7 +794,7 @@ function artCarousel(items){
   .car-arrow{width:40px;height:40px;top:calc(26px + 18px + 68vw*0.62)}
   .car-cap b{font-size:15.5px}
 }
-@media (prefers-reduced-motion:reduce){.car-slide{transition:none}}
+@media (prefers-reduced-motion:reduce){.car-slide{transition:none}.car-slide.is-active .car-photo::after{animation:none}}
 `; document.head.append(st); })();
 function revealArt(root){
   const cards = root.querySelectorAll('.art-item');
