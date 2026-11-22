@@ -135,6 +135,8 @@ function mapCoords(){
   const lat = +m[1], lng = +m[2];
   return (Math.abs(lat) <= 90 && Math.abs(lng) <= 180) ? lat + ',' + lng : '';
 }
+/* If the logo fails to load once (a dropped request), try again a second later instead of showing alt text. */
+function logoRetry(){ const i = this; if (i.dataset.retried) return; i.dataset.retried = '1'; setTimeout(() => { i.src = 'logo-512.png?r=' + Date.now(); }, 1000); }
 function waNumber(){ const n = digits(S.settings.whatsapp || CFG.WHATSAPP); if(!n) return ''; return n.length===10 ? '91'+n : n; }
 function waLink(text){ const n = waNumber(); return n ? 'https://wa.me/'+n+'?text='+encodeURIComponent(text) : null; }
 const seatsLeft = w => Math.max(0, (Number(w.seats)||0) - (Number(w.booked)||0));
@@ -272,7 +274,7 @@ function render(){
     el('div',{class:'wrap hero'},
       el('div',null,
         el('div',{class:'hero-id'},
-          el('img',{class:'hero-logo',src:'logo-512.png',alt:'',width:'132',height:'132'}),
+          el('img',{class:'hero-logo',src:'logo-512.png',alt:'',width:'132',height:'132',onerror:logoRetry}),
           el('div',{class:'hero-place'},
             el('span',{class:'eyebrow'}, picked ? catName(S.cat) : (st.city || 'Dehradun · Uttarakhand')),
             el('span',{class:'rule'}),
@@ -914,7 +916,7 @@ function aboutSection(st){
       el('ul',{class:'pillars'}, t('pillars').map(([b,s]) => el('li',null, el('b',null,b), el('span',null,s))))),
     artist ? el('aside',{class:'artist','aria-label':t('meet')},
       el('div',{class:'eyebrow',style:'color:var(--geru);opacity:1'},t('meet')),
-      el('div',{class:'artist-head'}, el('img',{class:'avatar-img',src:'logo-192.png',alt:''}),
+      el('div',{class:'artist-head'}, el('img',{class:'avatar-img',src:'logo-512.png',alt:'',onerror:logoRetry}),
         el('div',null, el('h3',null, artist), el('div',{class:'role'}, st.artistRole || 'Founder & lead artist'))),
       st.artistBio ? el('p',null, st.artistBio) : null,
       st.artistQuote ? el('div',{class:'quote'}, '“'+st.artistQuote+'”') : null,
