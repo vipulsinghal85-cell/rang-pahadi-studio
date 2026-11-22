@@ -1762,6 +1762,25 @@ async function load(){
   render();
 }
 
+/* Back-to-top button: appears after scrolling down, sits just above the chat button. */
+(function(){
+  const b = document.createElement('button');
+  b.type = 'button'; b.id = 'toTop'; b.className = 'to-top';
+  b.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>';
+  const label = () => { const l = S.lang==='hi' ? 'ऊपर जाएँ' : 'Back to top'; b.setAttribute('aria-label', l); b.title = l; };
+  b.addEventListener('click', () => { label(); window.scrollTo({ top: 0, behavior: REDUCE_MOTION.matches ? 'auto' : 'smooth' }); });
+  document.body.appendChild(b); label();
+  let t = 0; const check = () => { t = 0; const on = window.scrollY > window.innerHeight * 1.2; if (on) label(); b.classList.toggle('show', on); };
+  window.addEventListener('scroll', () => { if (!t) t = requestAnimationFrame(check); }, { passive: true });
+  check();
+  const st = document.createElement('style'); st.textContent = `
+.to-top{position:fixed;z-index:41;right:max(22px,calc(env(safe-area-inset-right,0px) + 22px));bottom:calc(84px + env(safe-area-inset-bottom,0px));width:44px;height:44px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--geru);display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 18px rgba(60,20,0,.18);opacity:0;visibility:hidden;transform:translateY(12px);transition:opacity .25s,transform .25s,visibility 0s .25s}
+.to-top.show{opacity:1;visibility:visible;transform:none;transition:opacity .25s,transform .25s,visibility 0s}
+.to-top:hover{background:var(--geru);color:#fff;border-color:var(--geru)}
+@media (max-width:600px){.to-top{right:max(22px,calc(env(safe-area-inset-right,0px) + 22px));bottom:calc(86px + env(safe-area-inset-bottom,0px))}}
+@media (prefers-reduced-motion:reduce){.to-top{transition:none}}`;
+  document.head.append(st);
+})();
 /* The logo and name at the top always go back to the home view: all workshops, top of the page. */
 document.querySelector('.topbar > a')?.addEventListener('click', e => { e.preventDefault();
   if (S.cat !== 'All') { S.cat = 'All'; render(); }
