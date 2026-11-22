@@ -12,7 +12,7 @@ try { S.lang = localStorage.getItem('rp-lang') === 'hi' ? 'hi' : 'en'; } catch {
 /* ---------------------------------------------------------------- words */
 const I18N = {
   en: {
-    nav_workshops:'Workshops', nav_gallery:'Gallery', nav_paint:'Paint for me', nav_gift:'Gift', nav_try:'Try art', nav_about:'About us', nav_faq:'FAQ', nav_visit:'Visit', lang_btn:'हिं',
+    nav_workshops:'Workshops', nav_gallery:'Gallery', nav_paint:'Paint for me', nav_gift:'Gift', nav_try:'Virtual studio', nav_about:'About us', nav_faq:'FAQ', nav_visit:'Visit', lang_btn:'हिं',
     see_all:'See all workshops', all_ws:'All workshops', about_us:'About us', find_btn:'Find my workshop', parties:'Parties & groups', explore:'Explore', everything:'Everything',
     facts:['Batches of 10–16','All materials included','Take your art home'], next_ws:'Next workshop',
     seats_left:(l,t)=>`${l} of ${t} seats left`, full:'Fully booked', book:'Book a seat', waitlist:'Join waitlist', cancelled:'Cancelled',
@@ -45,7 +45,7 @@ const I18N = {
     err_name:'Please add your name.', err_phone:'Please add a 10-digit mobile number so the studio can reach you.', err_generic:'That didn’t go through. Check your connection and try again, or send it on WhatsApp.',
   },
   hi: {
-    nav_workshops:'कार्यशालाएँ', nav_gallery:'गैलरी', nav_paint:'मेरे लिए पेंट', nav_gift:'उपहार', nav_try:'कला आज़माइए', nav_about:'हमारे बारे में', nav_faq:'सवाल', nav_visit:'पता', lang_btn:'EN',
+    nav_workshops:'कार्यशालाएँ', nav_gallery:'गैलरी', nav_paint:'मेरे लिए पेंट', nav_gift:'उपहार', nav_try:'वर्चुअल स्टूडियो', nav_about:'हमारे बारे में', nav_faq:'सवाल', nav_visit:'पता', lang_btn:'EN',
     see_all:'सभी कार्यशालाएँ देखें', all_ws:'सभी कार्यशालाएँ', about_us:'हमारे बारे में', find_btn:'मेरी कार्यशाला खोजें', parties:'पार्टी और ग्रुप', explore:'देखें', everything:'सब',
     facts:['10–16 लोगों के बैच','सारी सामग्री शामिल','अपनी कला घर ले जाएँ'], next_ws:'अगली कार्यशाला',
     seats_left:(l,t)=>`${t} में से ${l} सीटें बाकी`, full:'सभी सीटें भर गईं', book:'सीट बुक करें', waitlist:'प्रतीक्षा सूची में जुड़ें', cancelled:'रद्द',
