@@ -10,7 +10,7 @@
  * edit (pencil) > Version: New version > Deploy. The web app URL stays the same.
  */
 
-const TAB = { W: 'Workshops', B: 'Bookings', S: 'Settings', O: 'Overview', V: 'Vouchers', C: 'Coupons', L: 'Waitlist', R: 'Reviews', E: 'Enquiries', A: 'Artwork' };
+const TAB = { W: 'Workshops', B: 'Bookings', S: 'Settings', O: 'Overview', V: 'Vouchers', C: 'Coupons', L: 'Waitlist', R: 'Reviews', E: 'Enquiries', A: 'Artwork', M: 'Makery' };
 
 const HEAD = {
   Workshops: ['ID', 'Title', 'Category', 'Date', 'Start time', 'Duration (min)', 'Seats', 'Price (₹)', 'Price label', 'Level', 'Description', 'Status', 'Photo', 'Title (Hindi)', 'Description (Hindi)'],
@@ -21,12 +21,21 @@ const HEAD = {
   Reviews: ['Created', 'Name', 'Workshop', 'Rating', 'Review', 'Show on website'],
   Enquiries: ['Created', 'Name', 'Phone', 'Email', 'Organisation', 'Type', 'People', 'Preferred date', 'Message', 'Handled'],
   Artwork: ['Photo', 'Title', 'Medium', 'Size', 'Price', 'Status', 'Notes'],
+  Makery: ['Project', 'Description', 'Price (₹)', 'Time (min)', 'Ages', 'Photo', 'Status'],
 };
+const MAKERY_STARTER = [
+  ['Paint a mini canvas', 'A mountain sunset in acrylics on a 6×6 inch canvas, guided step by step.', 499, 60, '5+', '', 'Available'],
+  ['Aipan coaster pair', 'Paint two wooden coasters with Kumaoni Aipan patterns in geru red and white.', 449, 45, '8+', '', 'Available'],
+  ['Decorate a pillar candle', 'Pressed flowers, napkin art and gold details on a 2×4 inch candle.', 399, 40, '8+', '', 'Available'],
+  ['Pour a scented soy candle', 'Pick a scent and pour your own candle in a glass jar. Ready to carry home in about an hour.', 699, 60, '12+', '', 'Available'],
+  ['Texture art mini canvas', 'Raised palette-knife flowers on a 6×6 inch canvas.', 799, 75, '12+', '', 'Available'],
+  ['Kids\' wooden ornament', 'Paint a wooden star, heart or animal to hang at home.', 249, 30, '4+', '', 'Available'],
+];
 const CATEGORIES = ['Traditional Indian art', 'Painting & drawing', 'Mixed media & texture', 'Candle making', 'Handicrafts', 'Kids'];
 const NEW_TAGLINE = "Hands-on art workshops in the Doon valley: Aipan, painting, texture art, candle making, block printing and kids' classes. All materials included.";
 const NEW_TAGLINE_HI = 'दून घाटी में हाथों से कला सीखिए: ऐपण, पेंटिंग, टेक्सचर आर्ट, मोमबत्ती बनाना, ठप्पा छपाई और बच्चों की कक्षाएँ। सारी सामग्री शामिल।';
 const PUBLIC_SETTINGS = ['name', 'tagline', 'taglineHi', 'city', 'address', 'hours', 'whatsapp', 'upi', 'upiName', 'email', 'about', 'aboutHi',
-  'artistName', 'artistRole', 'artistBio', 'artistQuote', 'mapsUrl', 'googleReviewUrl', 'voucherAmounts', 'passPrice', 'passValue', 'siteUrl', 'parking', 'cancelPolicy', 'instagram'];
+  'artistName', 'artistRole', 'artistBio', 'artistQuote', 'mapsUrl', 'googleReviewUrl', 'voucherAmounts', 'passPrice', 'passValue', 'siteUrl', 'parking', 'cancelPolicy', 'instagram', 'makeryHours', 'makeryPlace'];
 
 /* ================================================================ web */
 
@@ -255,6 +264,7 @@ function publicData_(withExtras) {
       .reverse().slice(0, 12);
     out.gallery = gallery_(settings.galleryFolderId);
     out.artworks = artworks_(settings.artworkFolderId);
+    out.makery = makery_();
   }
   return out;
 }
@@ -325,6 +335,18 @@ function shareOnce_(id) {
     if (f.getSharingAccess() !== DriveApp.Access.ANYONE_WITH_LINK) f.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   } catch (e) {}
   cache.put(key, '1', 21600);
+}
+
+/** The Makery (walk-in projects): one row per project, shown in row order. Status: Available, Sold out or Hide. */
+function makery_() {
+  return readTable_(sheet_(TAB.M))
+    .filter(r => String(r['Project'] || '').trim() && String(r['Status'] || '').trim().toLowerCase() !== 'hide')
+    .map(r => ({
+      name: String(r['Project']).trim(), description: String(r['Description'] || '').trim(),
+      price: Number(String(r['Price (₹)']).replace(/[^\d.]/g, '')) || 0, mins: Number(r['Time (min)']) || 0,
+      ages: String(r['Ages'] || '').trim(), photo: photoUrl_(r['Photo']),
+      soldOut: String(r['Status'] || '').trim().toLowerCase() === 'sold out',
+    }));
 }
 
 function photoUrl_(v) {
@@ -535,6 +557,8 @@ function setup() {
     ['parking', '', 'Optional: parking / how to find us, shown in the FAQ'],
     ['cancelPolicy', '', 'Optional: your cancellation rule, shown in the FAQ (default: free date change up to 48 hours before)'],
     ['instagram', '', 'Your Instagram handle (e.g. rangpahadi) or profile link'],
+    ['makeryHours', '', 'The Makery (walk-in making): open hours, e.g. "Sat & Sun, 11 AM – 6 PM". Leave empty to show "Opening soon".'],
+    ['makeryPlace', '', 'Optional: where the Makery runs, if not the studio address (e.g. a partner café)'],
     ['artworkFolderId', '', 'Link of a Google Drive folder with YOUR artwork (the Gallery section). Titles, sizes and prices come from the Artwork tab; a photo with no row there uses its Drive description, e.g. "Monsoon Aipan · Acrylic on canvas · ₹4,500"'],
   ];
   const have = new Set(s.getLastRow() > 1 ? s.getRange(2, 1, s.getLastRow() - 1, 1).getValues().map(r => String(r[0]).trim()) : []);
@@ -569,6 +593,13 @@ function setup() {
   note_(a, 'Photo', 'Link of the photo in Google Drive (right-click > Share > Copy link). Rows show on the website in this order.');
   note_(a, 'Price', 'e.g. 4999, or text such as ₹3,999 for the set. Leave empty to show no price.');
   note_(a, 'Status', 'Available, Sold (shows "Sold" instead of the price) or Hide (not shown).');
+
+  const m = ensure_(ss, TAB.M, HEAD.Makery);
+  if (m.getLastRow() < 2) m.getRange(2, 1, MAKERY_STARTER.length, MAKERY_STARTER[0].length).setValues(MAKERY_STARTER);
+  [220, 380, 90, 90, 90, 220, 100].forEach((w, i) => m.setColumnWidth(i + 1, w));
+  m.getRange('G2:G').setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(['Available', 'Sold out', 'Hide'], true).setAllowInvalid(true).build());
+  note_(m, 'Project', 'One walk-in project per row, shown on the website in this order.');
+  note_(m, 'Status', 'Available, Sold out (shown but not reservable) or Hide (not shown).');
 
   const o = ensure_(ss, TAB.O, ['Date', 'Workshop', 'Seats', 'Booked', 'Left', 'Fill', 'Booked revenue', 'Paid']);
   o.getRange('A2').setFormula('=ARRAYFORMULA(IF(Workshops!A2:A="",,Workshops!D2:D))');

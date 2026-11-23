@@ -163,3 +163,13 @@ To switch it on after updating `Code.gs`:
 1. In the Sheet, open **Extensions** → **Apps Script**, paste the new `Code.gs` over the old one and click **Save**.
 2. Choose **setup** in the function list and click **Run**. This adds the 5-minute `warmCache` trigger. Your data is kept.
 3. Click **Deploy** → **Manage deployments** → pencil icon → Version: **New version** → **Deploy**. The web app URL stays the same.
+
+## The Makery (walk-in making)
+
+The **Makery** section lists walk-in projects people can make without a fixed workshop date.
+
+- **Makery tab:** one row per project: **Project**, **Description**, **Price (₹)**, **Time (min)**, **Ages**, **Photo** (optional Drive link) and **Status** (`Available`, `Sold out` or `Hide`). Rows show in this order.
+- **Settings → makeryHours:** open hours, e.g. `Sat & Sun, 11 AM – 6 PM`. While it's empty, the site says **Opening soon** and the buttons say **Notify me**. Once it's filled in, they say **Reserve a table**.
+- **Settings → makeryPlace:** optional venue if it isn't the studio address, e.g. a partner café.
+
+Reservations and "notify me" requests arrive as WhatsApp messages with the person's name, mobile, project, people, day and time.
