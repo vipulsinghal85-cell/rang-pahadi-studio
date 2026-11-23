@@ -1326,6 +1326,8 @@ function openBooking(w){
     sub.textContent = inr(gross); discRow.hidden = !disc; discRow.lastChild.textContent = '− '+inr(Math.min(disc,gross)); tot.textContent = inr(Math.max(0,gross-disc));
     const l = waLink(msg()); if (l) wa.href = l; wa.hidden = !l;
   };
+  // WhatsApp booking needs the same name + 10-digit mobile as the Book button
+  wa.addEventListener('click', e => { err.textContent = ''; if (!validPerson(name, phone, err)) { e.preventDefault(); return; } saveContact({name:name.value.trim(), phone:phone.value.trim()}); track('booking_whatsapp', {workshop:w.title}); });
   [name,phone,seats,note,code].forEach(i => i.addEventListener('input', sync));
   seats.addEventListener('change', () => { if (appliedCode) applyCode(); sync(); });
   async function applyCode(){
