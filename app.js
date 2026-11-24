@@ -980,14 +980,30 @@ const MAKERY_DEFAULT = [   // shown until the Sheet's Makery tab is live; same a
 ];
 const MK_ICONS = [['texture','🖌️'],['aipan','🪔'],['coaster','🪔'],['candle','🕯️'],['canvas','🎨'],['ornament','⭐'],['tote','👜'],['print','👜'],['clay','🏺'],['pot','🏺']];
 const MK_MOMENTS = [
-  {ic:'🛍️', t:'Off to the mall or market?', d:'Leave the kids with us. Children 6+ make something with our team for up to 2 hours while you shop nearby. We take your number at check-in and hand them back only to you.',
-   hiT:'मॉल या बाज़ार जा रहे हैं?', hiD:'बच्चों को हमारे पास छोड़ जाइए। 6+ साल के बच्चे 2 घंटे तक हमारी टीम के साथ कुछ बनाएँगे। आपका नंबर चेक-इन पर लेते हैं और बच्चे सिर्फ़ आपको ही सौंपते हैं।'},
+  {ic:'🛍️', t:'Off to the mall or market?', d:'Leave the kids, or grandparents, with us. They make something with our team for up to 2 hours while you shop nearby. See the drop-off basics below.',
+   hiT:'मॉल या बाज़ार जा रहे हैं?', hiD:'बच्चों या दादा-दादी, नाना-नानी को हमारे पास छोड़ जाइए। आप पास में खरीदारी करें, तब तक वे 2 घंटे तक हमारी टीम के साथ कुछ बनाएँगे। नीचे ड्रॉप-ऑफ़ के नियम देखें।'},
   {ic:'🌧️', t:'Nothing to do this weekend?', d:'Rainy day in the Doon or a free afternoon? Skip the screen and make something you can take home.',
    hiT:'वीकेंड पर कुछ करने को नहीं?', hiD:'बारिश का दिन हो या खाली दोपहर, स्क्रीन छोड़िए और घर ले जाने लायक कुछ बनाइए।'},
   {ic:'🎨', t:'Always wanted to try art?', d:'No experience needed. Pick a project and we guide you step by step, at your own pace.',
    hiT:'कला आज़माना चाहते थे?', hiD:'पहले से कुछ आना ज़रूरी नहीं। प्रोजेक्ट चुनिए, हम कदम-दर-कदम साथ रहेंगे।'},
   {ic:'💛', t:'Friends, family or a date?', d:'Make something together instead of just another coffee. Great for birthdays and catch-ups.',
    hiT:'दोस्त, परिवार या डेट?', hiD:'सिर्फ़ कॉफ़ी की जगह साथ मिलकर कुछ बनाइए। जन्मदिन और मिलने-जुलने के लिए बढ़िया।'},
+];
+const MK_RULES = [
+  'Children 6 and older can be dropped off. Younger children are welcome with an adult who stays.',
+  'Elders are welcome on their own or with family. Tell us about any mobility or hearing needs so we can seat and help them comfortably.',
+  'Drop-off is for up to 2 hours per visit.',
+  'At check-in we take the mobile number of the family member dropping off. Children are handed back only to that person.',
+  'We don\u2019t give food or medicine. Please send snacks or medicines along if needed.',
+  'Pay at check-in: per person per hour, all materials included.',
+];
+const MK_RULES_HI = [
+  '6 साल और उससे बड़े बच्चों को छोड़ सकते हैं। छोटे बच्चे किसी बड़े के साथ आएँ जो साथ रुके।',
+  'बुज़ुर्गों का अकेले या परिवार के साथ स्वागत है। चलने-फिरने या सुनने से जुड़ी कोई ज़रूरत हो तो बताइए, ताकि हम आराम से बैठा सकें और मदद कर सकें।',
+  'ड्रॉप-ऑफ़ एक बार में 2 घंटे तक।',
+  'चेक-इन पर छोड़ने वाले परिवार के सदस्य का मोबाइल नंबर लेते हैं। बच्चे सिर्फ़ उसी व्यक्ति को सौंपे जाते हैं।',
+  'हम खाना या दवा नहीं देते। ज़रूरत हो तो नाश्ता या दवा साथ भेजें।',
+  'भुगतान चेक-इन पर: प्रति व्यक्ति प्रति घंटा, सारी सामग्री सहित।',
 ];
 const mkRate = p => Number(p.rate || p.price) || 0;
 const mkTime = (m, hi) => m < 60 ? `${m} min` : (m % 60 ? `${Math.floor(m/60)} h ${m%60} min` : (m === 60 ? (hi?'1 घंटा':'1 hour') : `${m/60} ${hi?'घंटे':'hours'}`));
@@ -1020,6 +1036,9 @@ function makerySection(){
     el('div',{class:'mk-moments'}, MK_MOMENTS.map(m => el('div',{class:'mk-moment'},
       el('span',{class:'mk-m-ic','aria-hidden':'true'}, m.ic),
       el('div',null, el('b',null, hi?m.hiT:m.t), el('p',null, hi?m.hiD:m.d))))),
+    el('details',{class:'mk-rules'},
+      el('summary',null, hi?'ड्रॉप-ऑफ़ के बुनियादी नियम':'Drop-off basics'),
+      el('ul',null, (hi ? MK_RULES_HI : MK_RULES).map(r => el('li',null,r)))),
     el('h3',{class:'mk-menu-h'}, hi?'आज क्या बनाएँगे?':'What will you make today?'),
     el('div',{class:'mk-grid'}, list.map(card)),
     el('p',{class:'mk-note'}, hi?'दर प्रति व्यक्ति प्रति घंटा है, कम से कम 1 घंटा, फिर हर आधे घंटे के हिसाब से। 5 से ज़्यादा लोगों के लिए टेबल पहले से रिज़र्व करें।':'Rates are per person per hour: 1 hour minimum, then charged by the half hour. For groups of 5 or more, reserve a table first. Birthday or office group? See Parties & groups below.'));
@@ -1062,6 +1081,12 @@ function openMakery(p, open){
 .mk-m-ic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:var(--surface)}
 .mk-moment b{display:block;font-family:var(--display);font-size:15.5px;line-height:1.25;color:var(--ink)}
 .mk-moment p{margin:4px 0 0;font-size:13px;line-height:1.45;color:var(--muted)}
+.mk-rules{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px}
+.mk-rules summary{cursor:pointer;font-weight:700;color:var(--teal);list-style:none;display:flex;align-items:center;gap:8px}
+.mk-rules summary::-webkit-details-marker{display:none}
+.mk-rules summary::before{content:"▸";transition:transform .2s}
+.mk-rules[open] summary::before{transform:rotate(90deg)}
+.mk-rules ul{margin:10px 0 2px;padding-left:20px;display:grid;gap:6px;font-size:14px;line-height:1.5;color:var(--ink)}
 .mk-menu-h{font-family:var(--display);font-size:20px;margin:28px 0 0}
 .mk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-top:14px}
 @media (max-width:1000px){.mk-moments{grid-template-columns:1fr 1fr}}
