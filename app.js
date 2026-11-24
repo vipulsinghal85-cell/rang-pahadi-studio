@@ -670,7 +670,7 @@ const ART_KINDS = [
   {key:'paint', en:'Paintings',      hi:'पेंटिंग',        re:/./}
 ];
 function artKind(title){ return (ART_KINDS.find(k => k.re.test(title||'')) || ART_KINDS[3]).key; }
-let artFilter = 'all';
+let artFilter = 'all', artOpen = false;   // the full grid starts folded; the round carousel is the first look
 function artworkSection(){
   const ig = igUrl(), artist = S.settings.artistName || '', hi = S.lang==='hi';
   if (!S.artworks.length && !ig) return null;
@@ -708,8 +708,19 @@ function artworkSection(){
     revealArt(grid);
   }
   fill();
-  return el('section',{class:'block art-block',id:'artwork'}, head, chips, grid,
+  // grid stays in the page while folded: the round carousel reads its pieces and "View" opens them
+  const n = items.length;
+  const toggle = el('button',{type:'button',class:'art-toggle','aria-expanded':String(artOpen)});
+  const label = () => { toggle.setAttribute('aria-expanded', String(artOpen)); toggle.replaceChildren(
+    el('span',null, artOpen ? (hi?'कम दिखाएँ':'Show less') : (hi?`सभी ${n} कृतियाँ देखें`:`Show all ${n} pieces`)), el('span',{class:'art-toggle-chev','aria-hidden':'true'}, artOpen ? '▴' : '▾')); };
+  label();
+  toggle.addEventListener('click', () => {
+    artOpen = !artOpen; sec.classList.toggle('art-closed', !artOpen); label();
+    if (artOpen) revealArt(grid); else { const r = sec.getBoundingClientRect(); if (r.top < 0) toggle.scrollIntoView({block:'center'}); }
+  });
+  const sec = el('section',{class:'block art-block'+(artOpen?'':' art-closed'),id:'artwork'}, head, el('div',{class:'art-toggle-wrap'}, toggle), chips, grid,
     ig ? el('a',{class:'ig-strip',href:ig,target:'_blank',rel:'noopener',style:'margin-top:20px'}, igIcon(), el('span',null, hi?`और कलाकृतियाँ ${igHandle()} पर`:`More work and behind-the-scenes on ${igHandle()}`), el('b',null,'→')) : null);
+  return sec;
 }
 function revealArt(root){
   const cards = root.querySelectorAll('.art-item');
@@ -1081,6 +1092,11 @@ function openMakery(p, open){
 .mk-m-ic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:var(--surface)}
 .mk-moment b{display:block;font-family:var(--display);font-size:15.5px;line-height:1.25;color:var(--ink)}
 .mk-moment p{margin:4px 0 0;font-size:13px;line-height:1.45;color:var(--muted)}
+.art-toggle-wrap{display:flex;justify-content:center;margin:6px 0 18px}
+.art-toggle{display:inline-flex;align-items:center;gap:8px;min-height:44px;padding:10px 22px;border-radius:999px;border:1.5px solid var(--geru);background:var(--surface);color:var(--geru);font:inherit;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 6px 16px -10px rgba(60,20,0,.35)}
+.art-toggle:hover{background:var(--geru);color:#fff}
+.art-toggle-chev{font-size:13px}
+.art-block.art-closed > .art-filters,.art-block.art-closed > .art-grid{display:none!important}
 .mk-rules{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px}
 .mk-rules summary{cursor:pointer;font-weight:700;color:var(--teal);list-style:none;display:flex;align-items:center;gap:8px}
 .mk-rules summary::-webkit-details-marker{display:none}
