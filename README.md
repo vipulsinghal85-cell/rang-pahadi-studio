@@ -168,7 +168,7 @@ To switch it on after updating `Code.gs`:
 
 The **Makery** section lists walk-in projects people can make without a fixed workshop date.
 
-- **Makery tab:** one row per project: **Project**, **Description**, **Price (₹)**, **Time (min)**, **Ages**, **Photo** (optional Drive link) and **Status** (`Available`, `Sold out` or `Hide`). Rows show in this order.
+- **Makery tab:** one row per project: **Project**, **Description**, **Includes** (the materials, e.g. canvas, colours, brushes), **Price per hour (₹)** (per person, materials included; 1 hour minimum, then by the half hour), **Usual time (min)**, **Ages**, **Photo** (optional Drive link) and **Status** (`Available`, `Sold out` or `Hide`). Rows show in this order.
 - **Settings → makeryHours:** open hours, e.g. `Sat & Sun, 11 AM – 6 PM`. While it's empty, the site says **Opening soon** and the buttons say **Notify me**. Once it's filled in, they say **Reserve a table**.
 - **Settings → makeryPlace:** optional venue if it isn't the studio address, e.g. a partner café.
 

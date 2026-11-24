@@ -12,7 +12,7 @@ try { S.lang = localStorage.getItem('rp-lang') === 'hi' ? 'hi' : 'en'; } catch {
 /* ---------------------------------------------------------------- words */
 const I18N = {
   en: {
-    nav_workshops:'Workshops', nav_makery:'Makery', nav_gallery:'Gallery', nav_paint:'Paint for me', nav_gift:'Gift', nav_try:'Try it yourself', nav_about:'About us', nav_faq:'FAQ', nav_visit:'Visit', lang_btn:'हिं',
+    nav_workshops:'Workshops', nav_makery:'The Makery', nav_gallery:'Gallery', nav_paint:'Paint for me', nav_gift:'Gift', nav_try:'Try it yourself', nav_about:'About us', nav_faq:'FAQ', nav_visit:'Visit', lang_btn:'हिं',
     see_all:'See all workshops', all_ws:'All workshops', about_us:'About us', find_btn:'Find my workshop', parties:'Parties & groups', explore:'Explore', everything:'Everything',
     facts:['Batches of 10–16','All materials included','Take your art home'], next_ws:'Next workshop',
     seats_left:(l,t)=>`${l} of ${t} seats left`, full:'Fully booked', book:'Book a seat', waitlist:'Join waitlist', cancelled:'Cancelled',
@@ -45,7 +45,7 @@ const I18N = {
     err_name:'Please add your name.', err_phone:'Please add a 10-digit mobile number so the studio can reach you.', err_generic:'That didn’t go through. Check your connection and try again, or send it on WhatsApp.',
   },
   hi: {
-    nav_workshops:'कार्यशालाएँ', nav_makery:'मेकरी', nav_gallery:'गैलरी', nav_paint:'मेरे लिए पेंट', nav_gift:'उपहार', nav_try:'ख़ुद आज़माइए', nav_about:'हमारे बारे में', nav_faq:'सवाल', nav_visit:'पता', lang_btn:'EN',
+    nav_workshops:'कार्यशालाएँ', nav_makery:'द मेकरी', nav_gallery:'गैलरी', nav_paint:'मेरे लिए पेंट', nav_gift:'उपहार', nav_try:'ख़ुद आज़माइए', nav_about:'हमारे बारे में', nav_faq:'सवाल', nav_visit:'पता', lang_btn:'EN',
     see_all:'सभी कार्यशालाएँ देखें', all_ws:'सभी कार्यशालाएँ', about_us:'हमारे बारे में', find_btn:'मेरी कार्यशाला खोजें', parties:'पार्टी और ग्रुप', explore:'देखें', everything:'सब',
     facts:['10–16 लोगों के बैच','सारी सामग्री शामिल','अपनी कला घर ले जाएँ'], next_ws:'अगली कार्यशाला',
     seats_left:(l,t)=>`${t} में से ${l} सीटें बाकी`, full:'सभी सीटें भर गईं', book:'सीट बुक करें', waitlist:'प्रतीक्षा सूची में जुड़ें', cancelled:'रद्द',
@@ -329,7 +329,6 @@ function render(){
         el('div',{class:'section-head'}, el('h2',null,t('upcoming')),
           el('button',{type:'button',class:'quiz-link',onclick:openQuiz}, t('not_sure'),' ', el('b',null,t('find_btn')+' →'))),
         chips, grid),
-      makerySection(),
       artworkSection(),
       commissionSection(),
       gallerySection(),
@@ -339,6 +338,7 @@ function render(){
       giftSection(),
       faqSection(st),
       aboutSection(st),
+      makerySection(),
       el('div',{class:'split',id:'groups'}, groupsPanel(groupWA), visitPanel(st))
     ),
     el('footer',null, el('div',{class:'wrap'},
@@ -970,15 +970,17 @@ function visitPanel(st){
 }
 
 /* ======================================================== The Makery (walk-in making) */
-const MAKERY_DEFAULT = [   // shown until the Sheet's Makery tab is live; same as the tab's starter rows
-  {name:'Paint a mini canvas', description:'A mountain sunset in acrylics on a 6×6 inch canvas, guided step by step.', price:499, mins:60, ages:'5+'},
-  {name:'Aipan coaster pair', description:'Paint two wooden coasters with Kumaoni Aipan patterns in geru red and white.', price:449, mins:45, ages:'8+'},
-  {name:'Decorate a pillar candle', description:'Pressed flowers, napkin art and gold details on a 2×4 inch candle.', price:399, mins:40, ages:'8+'},
-  {name:'Pour a scented soy candle', description:'Pick a scent and pour your own candle in a glass jar. Ready to carry home in about an hour.', price:699, mins:60, ages:'12+'},
-  {name:'Texture art mini canvas', description:'Raised palette-knife flowers on a 6×6 inch canvas.', price:799, mins:75, ages:'12+'},
-  {name:"Kids' wooden ornament", description:'Paint a wooden star, heart or animal to hang at home.', price:249, mins:30, ages:'4+'},
+const MAKERY_DEFAULT = [   // shown until the Sheet's Makery tab is live; same as the tab's starter rows. rate = ₹ per person per hour, materials included
+  {name:'Paint a mini canvas', description:'A mountain sunset in acrylics, guided step by step.', includes:'6×6 inch canvas, acrylic colours, brushes, palette, apron', rate:399, mins:60, ages:'5+'},
+  {name:'Aipan coaster pair', description:'Kumaoni Aipan patterns in geru red and white on two coasters.', includes:'2 wooden coasters, geru and white paint, fine brushes, sealant', rate:399, mins:60, ages:'8+'},
+  {name:'Decorate a pillar candle', description:'Pressed flowers, napkin art and gold details.', includes:'2×4 inch pillar candle, printed napkins, dried flowers, glue, gold pen', rate:399, mins:45, ages:'8+'},
+  {name:'Pour a scented soy candle', description:'Pick a scent and pour your own candle. Ready to carry home in about an hour.', includes:'Soy wax, fragrance oil, glass jar with lid, cotton wick, label', rate:549, mins:60, ages:'12+'},
+  {name:'Texture art mini canvas', description:'Raised palette-knife flowers you can feel.', includes:'6×6 inch canvas, texture paste, palette knives, acrylic colours, apron', rate:549, mins:75, ages:'12+'},
+  {name:"Kids' wooden ornament", description:'A wooden star, heart or animal to hang at home.', includes:'Wooden shape, kid-safe colours, brushes, ribbon', rate:249, mins:30, ages:'4+'},
 ];
 const MK_ICONS = [['texture','🖌️'],['aipan','🪔'],['coaster','🪔'],['candle','🕯️'],['canvas','🎨'],['ornament','⭐'],['tote','👜'],['print','👜'],['clay','🏺'],['pot','🏺']];
+const mkRate = p => Number(p.rate || p.price) || 0;
+const mkTime = (m, hi) => m < 60 ? `${m} min` : (m % 60 ? `${Math.floor(m/60)} h ${m%60} min` : (m === 60 ? (hi?'1 घंटा':'1 hour') : `${m/60} ${hi?'घंटे':'hours'}`));
 const mkIcon = n => (MK_ICONS.find(([k]) => n.toLowerCase().includes(k)) || [0,'✨'])[1];
 function makerySection(){
   const list = (S.makery || MAKERY_DEFAULT).filter(p => p && p.name);
@@ -989,44 +991,47 @@ function makerySection(){
     p.photo ? el('div',{class:'mk-photo'}, el('img',{src:p.photo,alt:p.name,loading:'lazy'})) : el('div',{class:'mk-icon','aria-hidden':'true'}, mkIcon(p.name)),
     el('h3',null,p.name),
     p.description ? el('p',null,p.description) : null,
-    el('div',{class:'mk-meta'}, [p.mins ? `⏱ ${p.mins} min` : '', p.ages ? (hi?`उम्र ${p.ages}`:`Ages ${p.ages}`) : ''].filter(Boolean).join(' · ')),
+    p.includes ? el('div',{class:'mk-inc'}, el('b',null, hi?'शामिल: ':'Includes: '), p.includes) : null,
+    el('div',{class:'mk-meta'}, [p.mins ? (hi?`आमतौर पर ${mkTime(p.mins,hi)}`:`Usually ${mkTime(p.mins,hi)}`) : '', p.ages ? (hi?`उम्र ${p.ages}`:`Ages ${p.ages}`) : ''].filter(Boolean).join(' · ')),
     el('div',{class:'mk-foot'},
-      el('b',{class:'mk-price'}, p.price ? inr(p.price) : ''),
+      el('span',{class:'mk-price'}, mkRate(p) ? [el('b',null,inr(mkRate(p))), el('small',null, hi?' / घंटा':' / hour')] : ''),
       p.soldOut ? el('span',{class:'mk-out'}, hi?'अभी उपलब्ध नहीं':'Sold out today')
         : el('button',{type:'button',class:'btn btn-sm '+(open?'btn-primary':'btn-ghost'),onclick:()=>openMakery(p, open)}, open ? (hi?'टेबल रिज़र्व करें':'Reserve a table') : (hi?'खुलने पर बताएँ':'Notify me'))));
   return el('section',{class:'block mk-block',id:'makery'},
     el('div',{class:'block-head mk-head'},
       el('div',null,
-        el('div',{class:'eyebrow',style:'color:var(--geru);opacity:1'}, hi?'मेकरी · बिना बुकिंग के बनाइए':'The Makery · walk-in making'),
-        el('h2',null, hi?'बनाइए। अनुभव कीजिए। घर ले जाइए।':'Make. Experience. Take home.'),
-        el('p',{class:'desc'}, hi?'कोई तय तारीख नहीं। आइए, मेन्यू से एक प्रोजेक्ट चुनिए और 30 मिनट से 2 घंटे में अपनी चीज़ बनाकर ले जाइए। सारी सामग्री और मदद मेज़ पर तैयार।'
-          :'No fixed dates. Drop in, pick a project from the menu and make it in 30 minutes to 2 hours. Every material and a helping hand are waiting at the table.')),
+        el('div',{class:'eyebrow',style:'color:var(--geru);opacity:1'}, hi?'बनाइए · अनुभव कीजिए · घर ले जाइए':'Make · Experience · Take home'),
+        el('h2',null, hi?'द मेकरी':'The Makery'),
+        el('p',{class:'desc'}, hi?'आइए, एक प्रोजेक्ट चुनिए और अपनी रफ़्तार से बनाइए। भुगतान घंटे के हिसाब से, और सारी सामग्री शामिल: कैनवास, रंग, ब्रश, वैक्स, एप्रन और मदद।'
+          :'Walk in, pick a project and make it at your own pace. You pay by the hour, and everything you use is included: canvas, colours, brushes, wax, aprons and a helping hand.')),
       el('div',{class:'mk-when'+(open?'':' soon')},
         el('b',null, open ? hours : (hi?'जल्द खुल रहा है':'Opening soon')),
         el('span',null, open ? (place ? place.split(',').slice(0,2).join(',') : '') : (hi?'पहले जानने के लिए "खुलने पर बताएँ" दबाइए':'Tap "Notify me" to hear first')))),
     el('div',{class:'mk-grid'}, list.map(card)),
-    el('p',{class:'mk-note'}, hi?'परिवार और दोस्तों के साथ आइए। 5 से ज़्यादा लोगों के लिए टेबल पहले से रिज़र्व करें।':'Come with family or friends. For groups of 5 or more, reserve a table first. Birthday or office group? See Parties & groups below.'));
+    el('p',{class:'mk-note'}, hi?'दर प्रति व्यक्ति प्रति घंटा है, कम से कम 1 घंटा, फिर हर आधे घंटे के हिसाब से। 5 से ज़्यादा लोगों के लिए टेबल पहले से रिज़र्व करें।':'Rates are per person per hour: 1 hour minimum, then charged by the half hour. For groups of 5 or more, reserve a table first. Birthday or office group? See Parties & groups below.'));
 }
 function openMakery(p, open){
   const c = loadContact(), hi = S.lang==='hi';
   const name = el('input',{autocomplete:'name',value:c.name||''}), phone = el('input',{inputmode:'tel',autocomplete:'tel',value:c.phone||'',placeholder:'10-digit mobile'});
   const people = el('select',null,[1,2,3,4,5,6,8,10].map(n=>el('option',{value:n},n)));
+  const hrs = el('select',null,[1,1.5,2,2.5,3].map(n=>el('option',{value:n, selected: n === Math.max(1, Math.ceil((p.mins||60)/30)/2) || null}, n===1?(hi?'1 घंटा':'1 hour'):`${n} ${hi?'घंटे':'hours'}`)));
+  const est = () => inr(mkRate(p) * Number(people.value) * Number(hrs.value));
   const today = new Date(Date.now() + 330*60000).toISOString().slice(0,10);   // India date
   const day = el('input',{type:'date',min:today,value:today}), time = el('select',null,['Morning','Afternoon','Evening'].map(x=>el('option',{value:x},x)));
   const err = el('div',{class:'err',role:'alert'});
   const msg = () => open
-    ? `Hi ${studioName()}! I'd like to reserve a Makery table.\nProject: ${p.name} (${inr(p.price)} each)\nPeople: ${people.value}\nDay: ${day.value} · ${time.value}\nName: ${name.value.trim()}\nPhone: ${phone.value.trim()}`
-    : `Hi ${studioName()}! Please tell me when the Makery opens. I'd like to try "${p.name}".\nName: ${name.value.trim()}\nPhone: ${phone.value.trim()}`;
+    ? `Hi ${studioName()}! I'd like to reserve a table at The Makery.\nProject: ${p.name} (${inr(mkRate(p))} per person per hour)\nPeople: ${people.value} · Hours: ${hrs.value} (about ${est()})\nDay: ${day.value} · ${time.value}\nName: ${name.value.trim()}\nPhone: ${phone.value.trim()}`
+    : `Hi ${studioName()}! Please tell me when The Makery opens. I'd like to try "${p.name}".\nName: ${name.value.trim()}\nPhone: ${phone.value.trim()}`;
   const send = el('button',{type:'submit',class:'btn btn-primary'}, open ? (hi?'WhatsApp पर भेजें':'Send on WhatsApp') : (hi?'मुझे बताएँ':'Notify me'));
-  openModal(modal(el('h2',null, open ? (hi?'टेबल रिज़र्व करें':'Reserve a Makery table') : (hi?'खुलने पर बताएँ':'Get told when it opens')),
-    el('p',{class:'desc'}, `${mkIcon(p.name)} ${p.name}${p.price ? ' · '+inr(p.price)+(hi?' प्रति व्यक्ति':' per person') : ''}`),
+  openModal(modal(el('h2',null, open ? (hi?'टेबल रिज़र्व करें':'Reserve a table at The Makery') : (hi?'खुलने पर बताएँ':'Get told when it opens')),
+    el('p',{class:'desc'}, `${mkIcon(p.name)} ${p.name}${mkRate(p) ? ' · '+inr(mkRate(p))+(hi?' प्रति व्यक्ति प्रति घंटा, सामग्री सहित':' per person per hour, materials included') : ''}`),
     el('form',{novalidate:true,onsubmit:e=>{ e.preventDefault(); err.textContent='';
       if (!validPerson(name, phone, err)) return; saveContact({name:name.value.trim(), phone:phone.value.trim()});
       const l = waLink(msg()); if (l) window.open(l,'_blank','noopener');
       track(open ? 'makery_reserve' : 'makery_notify', {project:p.name}); closeModal();
-      toast(open ? (hi?'संदेश तैयार है। WhatsApp पर भेज दीजिए।':'Your message is ready. Send it in WhatsApp and we’ll confirm.') : (hi?'धन्यवाद! खुलते ही हम बताएँगे।':'Thanks! We’ll message you when the Makery opens.')); }},
+      toast(open ? (hi?'संदेश तैयार है। WhatsApp पर भेज दीजिए।':'Your message is ready. Send it in WhatsApp and we’ll confirm.') : (hi?'धन्यवाद! खुलते ही हम बताएँगे।':'Thanks! We’ll message you when The Makery opens.')); }},
       el('div',{class:'form'}, field(t('name'),name,true), field(t('mobile'),phone),
-        open ? field(hi?'कितने लोग':'People', people) : null, open ? field(hi?'दिन':'Day', day) : null, open ? field(hi?'समय':'Time', time) : null), err,
+        open ? field(hi?'कितने लोग':'People', people) : null, open ? field(hi?'कितने घंटे':'Hours', hrs) : null, open ? field(hi?'दिन':'Day', day) : null, open ? field(hi?'समय':'Time', time) : null), err,
       el('div',{class:'modal-foot'}, el('button',{type:'button',class:'btn btn-ghost',onclick:closeModal}, hi?'रद्द करें':'Cancel'), send))));
 }
 (function(){ const st = document.createElement('style'); st.textContent = `
@@ -1049,7 +1054,10 @@ function openMakery(p, open){
 .mk-card p{margin:0;font-size:14px;color:var(--muted);line-height:1.5;flex:1}
 .mk-meta{font-size:12.5px;color:var(--muted);font-weight:600}
 .mk-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px}
-.mk-price{font-size:19px;color:var(--ink)}
+.mk-price b{font-size:19px;color:var(--ink)}
+.mk-price small{font-size:13px;color:var(--muted);font-weight:600}
+.mk-inc{font-size:12.5px;line-height:1.45;color:var(--ink);background:rgba(35,135,124,.08);border-radius:10px;padding:7px 10px}
+.mk-inc b{color:var(--teal)}
 .mk-out{font-size:13px;font-weight:700;color:var(--muted)}
 .mk-note{margin:18px 0 0;font-size:13.5px;color:var(--muted)}
 @media (max-width:720px){.mk-block{padding-block:34px 38px}.mk-grid{grid-template-columns:1fr 1fr;gap:12px}.mk-card{padding:14px}.mk-card h3{font-size:16px}.mk-card p{font-size:13px}.mk-foot{flex-direction:column;align-items:stretch}.mk-foot .btn{width:100%;justify-content:center}.mk-when{min-width:0;width:100%}}
@@ -1362,7 +1370,7 @@ function buildTexture(){
 .hero-back{display:inline-flex;align-items:center;gap:6px;margin-bottom:18px;padding:7px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.14);color:#fff;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
 .hero-back:hover{background:rgba(255,255,255,.24)}
 @media (max-width:400px){.navlinks{gap:2px}.navlinks a{padding:6px 7px;font-size:13.5px}}
-@media (max-width:340px){.navlinks{gap:0}.navlinks a{padding:6px 5px;font-size:12.5px}}
+@media (max-width:340px){.navlinks{gap:0}.navlinks a{padding:6px 4px;font-size:12px}}
 /* phones: the drawing stays on screen while you scroll through the tools below it */
 @media (max-width:760px){
   .aipan .ap-stage{position:sticky;top:0;z-index:5;background:var(--surface);padding:10px 0 12px;margin:-10px 0 0;box-shadow:0 10px 12px -12px rgba(60,20,0,.35)}
