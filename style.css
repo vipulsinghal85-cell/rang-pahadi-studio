@@ -173,6 +173,9 @@ textarea{resize:vertical;min-height:70px}
 .artist p{margin:14px 0 0;color:var(--muted);font-size:14.5px}
 .artist .quote{font-family:"Instrument Serif",Georgia,serif;font-style:italic;font-size:22px;line-height:1.25;color:var(--ink);margin-top:16px;padding-top:16px;border-top:1px dashed var(--line)}
 @media (max-width:760px){.about{grid-template-columns:1fr;gap:24px}.pillars{grid-template-columns:1fr}}
+/* phones: heading, then "Meet the artist", then the longer story, so visitors see who Akanksha is straight away */
+@media (max-width:760px){.about{gap:0}.about>div{display:contents}.about .story{order:2;margin-top:22px}.about .pillars{order:3}.about>.artist{order:1;margin-top:18px}}
+.wk-block+#about{margin-top:0}
 footer{border-top:1px solid var(--line);padding-block:20px 30px;color:var(--muted);font-size:13px}
 @media (max-width:760px){
   .hero{grid-template-columns:1fr;gap:32px;padding-block:32px 44px}
