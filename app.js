@@ -1016,6 +1016,40 @@ const MK_RULES_HI = [
   'हम खाना या दवा नहीं देते। ज़रूरत हो तो नाश्ता या दवा साथ भेजें।',
   'भुगतान चेक-इन पर: प्रति व्यक्ति प्रति घंटा, सारी सामग्री सहित।',
 ];
+/* Makery questions: shown at the bottom of The Makery. Workshop questions stay in faqItems(). */
+function makeryFaqItems(){
+  const st = S.settings || {}, hi = S.lang==='hi', hours = String(st.makeryHours||'').trim();
+  const place = String(st.makeryPlace||'').trim();
+  const when = hours ? (hi ? `${hours}${place ? ', '+place : ''}।` : `${hours}${place ? ', at '+place : ''}.`)
+    : (hi ? 'द मेकरी जल्द खुल रहा है। किसी भी प्रोजेक्ट पर “खुलने पर बताएँ” दबाइए, खुलते ही हम WhatsApp पर बता देंगे।'
+          : 'The Makery is opening soon. Tap “Notify me” on any project and we’ll message you on WhatsApp as soon as it opens.');
+  return hi ? [
+    ['द मेकरी, कार्यशाला से कैसे अलग है?','कार्यशाला एक तय तारीख़ और समय पर होती है, जिसमें पूरा ग्रुप कलाकार के साथ एक ही चीज़ बनाता है। द मेकरी में आप जब चाहें आइए, एक छोटा प्रोजेक्ट चुनिए और अपनी रफ़्तार से बनाइए। भुगतान घंटे के हिसाब से।'],
+    ['कब और कहाँ खुला है?', when],
+    ['क्या पहले से बुक करना होगा?','नहीं, सीधे आ जाइए। 5 या उससे ज़्यादा लोगों के लिए टेबल पहले से रिज़र्व करें।'],
+    ['कीमत कैसे लगती है?','प्रति व्यक्ति प्रति घंटा, सारी सामग्री सहित: कैनवास, रंग, ब्रश, वैक्स, एप्रन। कम से कम 1 घंटा, फिर हर आधे घंटे के हिसाब से। भुगतान चेक-इन पर UPI से।'],
+    ['क्या बच्चों को छोड़कर जा सकते हैं?','हाँ, 6 साल और उससे बड़े बच्चों को 2 घंटे तक छोड़ सकते हैं। चेक-इन पर छोड़ने वाले का मोबाइल नंबर लेते हैं और बच्चे सिर्फ़ उसी को सौंपे जाते हैं। छोटे बच्चे किसी बड़े के साथ आएँ जो साथ रुके।'],
+    ['क्या बुज़ुर्ग या बड़े भी आ सकते हैं?','बिल्कुल। द मेकरी हर उम्र के लिए है। चलने-फिरने या सुनने से जुड़ी कोई ज़रूरत हो तो बताइए, हम आराम से बैठा देंगे और मदद करेंगे।'],
+    ['क्या पेंटिंग आनी चाहिए?','नहीं। हर प्रोजेक्ट में हमारी टीम कदम-दर-कदम मदद करती है।'],
+    ['बनाई चीज़ कब घर ले जा सकते हैं?','ज़्यादातर चीज़ें उसी दिन। मोमबत्ती लगभग एक घंटे में तैयार हो जाती है; टेक्सचर आर्ट को पूरी तरह सूखने में एक दिन लग सकता है।'],
+  ] : [
+    ['How is The Makery different from a workshop?','A workshop runs on a set date and time, with the whole group making the same piece alongside the artist. At The Makery you walk in when it suits you, pick a small project and make it at your own pace. You pay by the hour.'],
+    ['When and where is it open?', when],
+    ['Do I need to book?','No, just walk in. For groups of 5 or more, reserve a table first.'],
+    ['How does pricing work?','Per person per hour, with all materials included: canvas, colours, brushes, wax and aprons. 1 hour minimum, then charged by the half hour. Pay by UPI at check-in.'],
+    ['Can I drop off my children?','Yes. Children 6 and older can stay for up to 2 hours. At check-in we take the mobile number of the person dropping off, and children are handed back only to them. Younger children are welcome with an adult who stays.'],
+    ['Can adults and elders join?','Of course. The Makery is for every age. Tell us about any mobility or hearing needs and we’ll seat and help them comfortably.'],
+    ['Do I need to know how to paint?','No. Our team helps you step by step with every project.'],
+    ['When can I take my piece home?','Most pieces go home the same day. Candles are ready in about an hour; texture art can need a day to dry fully.'],
+  ];
+}
+function makeryFaq(){
+  const hi = S.lang==='hi';
+  return el('div',{class:'mk-faq',id:'makery-faq'},
+    el('h3',{class:'mk-menu-h'}, hi?'द मेकरी से जुड़े सवाल':'Makery questions'),
+    el('div',{class:'faq-list'}, makeryFaqItems().map(([q,a]) => el('details',{class:'faq-item'},
+      el('summary',null, el('span',null,q), el('span',{class:'faq-plus','aria-hidden':'true'},'+')), el('p',null,a)))));
+}
 const mkRate = p => Number(p.rate || p.price) || 0;
 const mkTime = (m, hi) => m < 60 ? `${m} min` : (m % 60 ? `${Math.floor(m/60)} h ${m%60} min` : (m === 60 ? (hi?'1 घंटा':'1 hour') : `${m/60} ${hi?'घंटे':'hours'}`));
 const mkIcon = n => (MK_ICONS.find(([k]) => n.toLowerCase().includes(k)) || [0,'✨'])[1];
@@ -1052,7 +1086,8 @@ function makerySection(){
       el('ul',null, (hi ? MK_RULES_HI : MK_RULES).map(r => el('li',null,r)))),
     el('h3',{class:'mk-menu-h'}, hi?'आज क्या बनाएँगे?':'What will you make today?'),
     el('div',{class:'mk-grid'}, list.map(card)),
-    el('p',{class:'mk-note'}, hi?'दर प्रति व्यक्ति प्रति घंटा है, कम से कम 1 घंटा, फिर हर आधे घंटे के हिसाब से। 5 से ज़्यादा लोगों के लिए टेबल पहले से रिज़र्व करें।':'Rates are per person per hour: 1 hour minimum, then charged by the half hour. For groups of 5 or more, reserve a table first. Birthday or office group? See Parties & groups below.'));
+    el('p',{class:'mk-note'}, hi?'दर प्रति व्यक्ति प्रति घंटा है, कम से कम 1 घंटा, फिर हर आधे घंटे के हिसाब से। 5 से ज़्यादा लोगों के लिए टेबल पहले से रिज़र्व करें।':'Rates are per person per hour: 1 hour minimum, then charged by the half hour. For groups of 5 or more, reserve a table first. Birthday or office group? See Parties & groups below.'),
+    makeryFaq());
 }
 function openMakery(p, open){
   const c = loadContact(), hi = S.lang==='hi';
@@ -1080,6 +1115,7 @@ function openMakery(p, open){
 }
 (function(){ const st = document.createElement('style'); st.textContent = `
 .mk-block{position:relative;isolation:isolate;padding-block:46px 50px}
+.mk-faq{margin-top:34px}.mk-faq .mk-menu-h{margin:0 0 14px}
 .mk-block::before{content:"";position:absolute;top:0;bottom:0;left:calc(50% - 50vw);right:calc(50% - 50vw);z-index:-2;background:rgba(35,135,124,.12)}
 .mk-head{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap}
 .mk-head h2::after{background:var(--teal)!important}
@@ -1776,7 +1812,7 @@ function faqItems(st){
 }
 function faqSection(st){
   return el('section',{class:'block faq',id:'faq'},
-    el('div',{class:'block-head'}, el('div',null, el('h2',null, S.lang==='hi'?'अक्सर पूछे जाने वाले सवाल':'Questions people ask'),
+    el('div',{class:'block-head'}, el('div',null, el('h2',null, S.lang==='hi'?'कार्यशाला से जुड़े सवाल':'Workshop questions'),
       el('p',{class:'desc'}, S.lang==='hi'?'जवाब नहीं मिला? WhatsApp पर पूछिए।':'Didn’t find your answer? Ask us on WhatsApp.'))),
     el('div',{class:'faq-list'}, faqItems(st).map(([q,a],i) => el('details',{class:'faq-item',open:i===0},
       el('summary',null, el('span',null,q), el('span',{class:'faq-plus','aria-hidden':'true'},'+')), el('p',null,a)))));
@@ -1870,7 +1906,7 @@ function updateStructuredData(){
   });
   // The studio itself (LocalBusiness) is described once, in index.html, so Google doesn't count it twice.
   const data = events.map(e => ({'@context':'https://schema.org', ...e}));
-  data.push({'@context':'https://schema.org','@type':'FAQPage', mainEntity: faqItems(st).map(([q,a]) => ({'@type':'Question', name:q, acceptedAnswer:{'@type':'Answer', text:a}}))});
+  data.push({'@context':'https://schema.org','@type':'FAQPage', mainEntity: [...faqItems(st), ...(S.makery || MAKERY_DEFAULT).length ? makeryFaqItems() : []].map(([q,a]) => ({'@type':'Question', name:q, acceptedAnswer:{'@type':'Answer', text:a}}))});
   const json = JSON.stringify(data);
   if (json === lastLD) return; lastLD = json;
   let tag = document.getElementById('ld-events');
