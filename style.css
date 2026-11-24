@@ -368,3 +368,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .rb-cap-view{border:0;background:var(--geru);color:#fff;font:inherit;font-weight:700;font-size:13.5px;border-radius:99px;padding:8px 14px;cursor:pointer;white-space:nowrap}
 .rb-cap-view:hover{filter:brightness(1.08)}
 @media (max-width:760px){#artwork .rb-showcase{height:410px}.rb-cap{border-radius:18px;padding:10px 12px;margin-top:-10px}.rb-cap-text{text-align:center;align-items:center;width:100%}}
+
+/* loading hero (index.html) uses the real hero's styles; its title is a <p> so the page keeps one h1 */
+.seo-hero .h1-like{font-family:var(--display);text-wrap:balance;font-size:clamp(46px,7.6vw,96px);font-weight:800;letter-spacing:-.025em;line-height:.95;margin:14px 0 0}
+.seo-hero .hero{grid-template-columns:1fr}
+.seo-hero .hero-place{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:18px}.seo-hero .rule{width:36px;height:1.5px;background:currentColor;opacity:.5}
