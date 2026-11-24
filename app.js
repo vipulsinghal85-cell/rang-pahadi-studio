@@ -1922,6 +1922,17 @@ async function load(){
   render();
 }
 
+/* Scroll animations (enhance.js / GSAP ScrollTrigger) work out their trigger points once. The page then grows and
+ * shrinks (Sheet data, the round carousel, folded sections), which can leave a trigger below the end of the page,
+ * e.g. "How booking works" never appearing. When the page height changes, fire a resize so they recalculate. */
+(function(){
+  if (!('ResizeObserver' in window)) return;
+  let last = 0, t = 0;
+  new ResizeObserver(() => { clearTimeout(t); t = setTimeout(() => {
+    const h = document.documentElement.scrollHeight;
+    if (Math.abs(h - last) > 40) { last = h; window.dispatchEvent(new Event('resize')); }
+  }, 250); }).observe(document.body);
+})();
 /* Back-to-top button: appears after scrolling down, sits just above the chat button. */
 (function(){
   const b = document.createElement('button');
