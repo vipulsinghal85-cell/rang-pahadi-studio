@@ -348,7 +348,9 @@ footer .wrap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .social-btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
 .ig-icon{display:inline-grid;place-items:center}
 .ig-strip{display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:16px;text-decoration:none;color:#fff;font-weight:600;background:linear-gradient(100deg,#8a2d60,#b8492d 55%,#d89a2b)}
-.ig-strip span{flex:1}
+.ig-strip > span:not(.ig-icon){flex:1;min-width:0;line-height:1.35}
+.ig-strip .ig-icon{flex:none;width:38px;height:38px;border-radius:12px;background:rgba(255,255,255,.18)}
+.ig-strip > b{flex:none;font-size:18px}
 .ig-strip:hover{filter:brightness(1.06)}
 .footer-ig{color:inherit;text-decoration:none;display:inline-flex;align-items:center;gap:6px;font-weight:600}
 .footer-ig:hover{color:var(--geru)}
