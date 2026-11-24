@@ -979,6 +979,16 @@ const MAKERY_DEFAULT = [   // shown until the Sheet's Makery tab is live; same a
   {name:"Kids' wooden ornament", description:'A wooden star, heart or animal to hang at home.', includes:'Wooden shape, kid-safe colours, brushes, ribbon', rate:249, mins:30, ages:'4+'},
 ];
 const MK_ICONS = [['texture','🖌️'],['aipan','🪔'],['coaster','🪔'],['candle','🕯️'],['canvas','🎨'],['ornament','⭐'],['tote','👜'],['print','👜'],['clay','🏺'],['pot','🏺']];
+const MK_MOMENTS = [
+  {ic:'🛍️', t:'Off to the mall or market?', d:'Leave the kids with us. Children 6+ make something with our team for up to 2 hours while you shop nearby. We take your number at check-in and hand them back only to you.',
+   hiT:'मॉल या बाज़ार जा रहे हैं?', hiD:'बच्चों को हमारे पास छोड़ जाइए। 6+ साल के बच्चे 2 घंटे तक हमारी टीम के साथ कुछ बनाएँगे। आपका नंबर चेक-इन पर लेते हैं और बच्चे सिर्फ़ आपको ही सौंपते हैं।'},
+  {ic:'🌧️', t:'Nothing to do this weekend?', d:'Rainy day in the Doon or a free afternoon? Skip the screen and make something you can take home.',
+   hiT:'वीकेंड पर कुछ करने को नहीं?', hiD:'बारिश का दिन हो या खाली दोपहर, स्क्रीन छोड़िए और घर ले जाने लायक कुछ बनाइए।'},
+  {ic:'🎨', t:'Always wanted to try art?', d:'No experience needed. Pick a project and we guide you step by step, at your own pace.',
+   hiT:'कला आज़माना चाहते थे?', hiD:'पहले से कुछ आना ज़रूरी नहीं। प्रोजेक्ट चुनिए, हम कदम-दर-कदम साथ रहेंगे।'},
+  {ic:'💛', t:'Friends, family or a date?', d:'Make something together instead of just another coffee. Great for birthdays and catch-ups.',
+   hiT:'दोस्त, परिवार या डेट?', hiD:'सिर्फ़ कॉफ़ी की जगह साथ मिलकर कुछ बनाइए। जन्मदिन और मिलने-जुलने के लिए बढ़िया।'},
+];
 const mkRate = p => Number(p.rate || p.price) || 0;
 const mkTime = (m, hi) => m < 60 ? `${m} min` : (m % 60 ? `${Math.floor(m/60)} h ${m%60} min` : (m === 60 ? (hi?'1 घंटा':'1 hour') : `${m/60} ${hi?'घंटे':'hours'}`));
 const mkIcon = n => (MK_ICONS.find(([k]) => n.toLowerCase().includes(k)) || [0,'✨'])[1];
@@ -1007,6 +1017,10 @@ function makerySection(){
       el('div',{class:'mk-when'+(open?'':' soon')},
         el('b',null, open ? hours : (hi?'जल्द खुल रहा है':'Opening soon')),
         el('span',null, open ? (place ? place.split(',').slice(0,2).join(',') : '') : (hi?'पहले जानने के लिए "खुलने पर बताएँ" दबाइए':'Tap "Notify me" to hear first')))),
+    el('div',{class:'mk-moments'}, MK_MOMENTS.map(m => el('div',{class:'mk-moment'},
+      el('span',{class:'mk-m-ic','aria-hidden':'true'}, m.ic),
+      el('div',null, el('b',null, hi?m.hiT:m.t), el('p',null, hi?m.hiD:m.d))))),
+    el('h3',{class:'mk-menu-h'}, hi?'आज क्या बनाएँगे?':'What will you make today?'),
     el('div',{class:'mk-grid'}, list.map(card)),
     el('p',{class:'mk-note'}, hi?'दर प्रति व्यक्ति प्रति घंटा है, कम से कम 1 घंटा, फिर हर आधे घंटे के हिसाब से। 5 से ज़्यादा लोगों के लिए टेबल पहले से रिज़र्व करें।':'Rates are per person per hour: 1 hour minimum, then charged by the half hour. For groups of 5 or more, reserve a table first. Birthday or office group? See Parties & groups below.'));
 }
@@ -1043,7 +1057,14 @@ function openMakery(p, open){
 .mk-when b{font-family:var(--display);font-size:17px;color:var(--teal)}
 .mk-when.soon b{color:var(--geru)}
 .mk-when span{font-size:13px;color:var(--muted)}
-.mk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-top:22px}
+.mk-moments{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:22px}
+.mk-moment{display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.6);border:1px dashed rgba(35,135,124,.45);border-radius:16px;padding:14px}
+.mk-m-ic{flex:none;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:22px;background:var(--surface)}
+.mk-moment b{display:block;font-family:var(--display);font-size:15.5px;line-height:1.25;color:var(--ink)}
+.mk-moment p{margin:4px 0 0;font-size:13px;line-height:1.45;color:var(--muted)}
+.mk-menu-h{font-family:var(--display);font-size:20px;margin:28px 0 0}
+.mk-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-top:14px}
+@media (max-width:1000px){.mk-moments{grid-template-columns:1fr 1fr}}
 .mk-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:8px;transition:transform .2s,box-shadow .2s}
 .mk-card:hover{transform:translateY(-3px);box-shadow:0 14px 28px -18px rgba(60,20,0,.45)}
 .mk-card.is-out{opacity:.6}
@@ -1060,7 +1081,7 @@ function openMakery(p, open){
 .mk-inc b{color:var(--teal)}
 .mk-out{font-size:13px;font-weight:700;color:var(--muted)}
 .mk-note{margin:18px 0 0;font-size:13.5px;color:var(--muted)}
-@media (max-width:720px){.mk-block{padding-block:34px 38px}.mk-grid{grid-template-columns:1fr 1fr;gap:12px}.mk-card{padding:14px}.mk-card h3{font-size:16px}.mk-card p{font-size:13px}.mk-foot{flex-direction:column;align-items:stretch}.mk-foot .btn{width:100%;justify-content:center}.mk-when{min-width:0;width:100%}}
+@media (max-width:720px){.mk-moments{grid-template-columns:1fr;gap:10px}.mk-moment{padding:12px}.mk-menu-h{font-size:18px;margin-top:22px}.mk-block{padding-block:34px 38px}.mk-grid{grid-template-columns:1fr 1fr;gap:12px}.mk-card{padding:14px}.mk-card h3{font-size:16px}.mk-card p{font-size:13px}.mk-foot{flex-direction:column;align-items:stretch}.mk-foot .btn{width:100%;justify-content:center}.mk-when{min-width:0;width:100%}}
 `; document.head.append(st); })();
 
 /* ===================================================== Try Aipan canvas */
