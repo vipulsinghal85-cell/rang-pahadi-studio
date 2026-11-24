@@ -370,7 +370,7 @@ html,body{overflow-x:clip}
 #try-texture{--wash:rgba(227,161,39,.17);--accent:var(--marigold)}
 #reviews{--wash:rgba(200,69,106,.12);--accent:var(--rhodo)}
 #gift{--accent:var(--marigold)}
-#faq{--wash:rgba(35,135,124,.14);--accent:var(--teal)}
+#faq{--wash:rgba(227,161,39,.16);--accent:var(--marigold)}   /* workshop questions: same marigold as the workshop section */
 #about{--wash:rgba(115,87,164,.13);--accent:var(--lav);margin-top:64px}
 /* paint speckles on the workshop wash */
 .wk-block::after,#try-aipan::after,#try-texture::after,#reviews::after,#faq::after,#about::after{content:"";position:absolute;top:0;bottom:0;left:calc(50% - 50vw);right:calc(50% - 50vw);z-index:-1;pointer-events:none;opacity:.55;
@@ -424,6 +424,11 @@ html,body{overflow-x:clip}
 .faq-item:nth-child(4n+1) summary>:last-child{--q:var(--teal)}.faq-item:nth-child(4n+2) summary>:last-child{--q:var(--marigold)}
 .faq-item:nth-child(4n+3) summary>:last-child{--q:var(--rhodo)}.faq-item:nth-child(4n+4) summary>:last-child{--q:var(--sky)}
 .faq-item summary>:last-child{background:color-mix(in srgb,var(--q,var(--geru)) 16%,transparent)!important;color:var(--q,var(--geru))!important}
+/* workshop questions in workshop marigold, Makery questions in Makery teal */
+#faq .faq-item summary>:last-child{--q:var(--marigold)}#faq .faq-item[open]{border-color:var(--marigold)}
+#faq .faq-item{border-color:rgba(227,161,39,.35)}
+.mk-faq .faq-item summary>:last-child{--q:var(--teal)}.mk-faq .faq-item[open]{border-color:var(--teal)}
+.mk-faq .faq-item{border-color:rgba(35,135,124,.35)}
 /* about: colourful point rules */
 .pillars li:nth-child(1){border-color:var(--marigold)}.pillars li:nth-child(2){border-color:var(--teal)}.pillars li:nth-child(3){border-color:var(--rhodo)}
 /* reviews: soft colour cards */
