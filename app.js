@@ -329,6 +329,7 @@ function render(){
         el('div',{class:'section-head'}, el('h2',null,t('upcoming')),
           el('button',{type:'button',class:'quiz-link',onclick:openQuiz}, t('not_sure'),' ', el('b',null,t('find_btn')+' →'))),
         chips, grid),
+      aboutSection(st),
       artworkSection(),
       commissionSection(),
       gallerySection(),
@@ -337,7 +338,6 @@ function render(){
       reviewsSection(),
       giftSection(),
       faqSection(st),
-      aboutSection(st),
       makerySection(),
       el('div',{class:'split',id:'groups'}, groupsPanel(groupWA), visitPanel(st))
     ),
