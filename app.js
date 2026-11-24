@@ -1933,6 +1933,24 @@ async function load(){
     if (Math.abs(h - last) > 40) { last = h; window.dispatchEvent(new Event('resize')); }
   }, 250); }).observe(document.body);
 })();
+/* Safety net for "How booking works": some phone browsers (e.g. desktop-site mode, zoomed out) never fire the
+ * scroll animation, leaving the four steps invisible. Once the list is on screen, show anything still hidden. */
+(function(){
+  if (!('IntersectionObserver' in window)) return;
+  const reveal = list => [list, ...list.children].forEach(n => {
+    if (parseFloat(getComputedStyle(n).opacity) < 0.5 || getComputedStyle(n).visibility === 'hidden') {
+      n.style.transition = 'opacity .5s ease, transform .5s ease';
+      n.style.visibility = 'visible'; n.style.opacity = '1'; n.style.transform = 'none';
+    }
+  });
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) setTimeout(() => reveal(e.target), 1200); }));
+  let tries = 0, seen = null;
+  const find = setInterval(() => {
+    const list = document.querySelector('.rb-steps h2 ~ p + div');
+    if (list && list !== seen) { seen = list; io.observe(list); }
+    if (++tries > 90) clearInterval(find);
+  }, 1000);
+})();
 /* Back-to-top button: appears after scrolling down, sits just above the chat button. */
 (function(){
   const b = document.createElement('button');
