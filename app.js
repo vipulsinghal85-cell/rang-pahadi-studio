@@ -1051,7 +1051,7 @@ function makeryFaqItems(){
 function makeryFaq(){
   const hi = S.lang==='hi';
   return el('div',{class:'mk-faq',id:'makery-faq'},
-    el('h3',{class:'mk-menu-h'}, hi?'द मेकरी से जुड़े सवाल':'Makery questions'),
+    el('h3',{class:'mk-menu-h'}, hi?'द मेकरी FAQ':'Makery FAQs'),
     el('div',{class:'faq-list'}, makeryFaqItems().map(([q,a]) => el('details',{class:'faq-item'},
       el('summary',null, el('span',null,q), el('span',{class:'faq-plus','aria-hidden':'true'},'+')), el('p',null,a)))));
 }
@@ -1817,7 +1817,7 @@ function faqItems(st){
 }
 function faqSection(st){
   return el('section',{class:'block faq',id:'faq'},
-    el('div',{class:'block-head'}, el('div',null, el('h2',null, S.lang==='hi'?'कार्यशाला से जुड़े सवाल':'Workshop questions'),
+    el('div',{class:'block-head'}, el('div',null, el('h2',null, S.lang==='hi'?'कार्यशाला FAQ':'Workshop FAQs'),
       el('p',{class:'desc'}, S.lang==='hi'?'जवाब नहीं मिला? WhatsApp पर पूछिए।':'Didn’t find your answer? Ask us on WhatsApp.'))),
     el('div',{class:'faq-list'}, faqItems(st).map(([q,a],i) => el('details',{class:'faq-item',open:i===0},
       el('summary',null, el('span',null,q), el('span',{class:'faq-plus','aria-hidden':'true'},'+')), el('p',null,a)))));
