@@ -986,13 +986,13 @@ function visitPanel(st){
 }
 
 /* ======================================================== The Makery (walk-in making) */
-const MAKERY_DEFAULT = [   // shown until the Sheet's Makery tab is live; same as the tab's starter rows. rate = ₹ per person per hour, materials included
-  {name:'Paint a mini canvas', description:'A mountain sunset in acrylics, guided step by step.', includes:'6×6 inch canvas, acrylic colours, brushes, palette, apron', rate:399, mins:60, ages:'5+'},
-  {name:'Aipan coaster pair', description:'Kumaoni Aipan patterns in geru red and white on two coasters.', includes:'2 wooden coasters, geru and white paint, fine brushes, sealant', rate:399, mins:60, ages:'8+'},
-  {name:'Decorate a pillar candle', description:'Pressed flowers, napkin art and gold details.', includes:'2×4 inch pillar candle, printed napkins, dried flowers, glue, gold pen', rate:399, mins:45, ages:'8+'},
-  {name:'Pour a scented soy candle', description:'Pick a scent and pour your own candle. Ready to carry home in about an hour.', includes:'Soy wax, fragrance oil, glass jar with lid, cotton wick, label', rate:549, mins:60, ages:'12+'},
-  {name:'Texture art mini canvas', description:'Raised palette-knife flowers you can feel.', includes:'6×6 inch canvas, texture paste, palette knives, acrylic colours, apron', rate:549, mins:75, ages:'12+'},
-  {name:"Kids' wooden ornament", description:'A wooden star, heart or animal to hang at home.', includes:'Wooden shape, kid-safe colours, brushes, ribbon', rate:249, mins:30, ages:'4+'},
+const MAKERY_DEFAULT = [   // shown if the Sheet's Makery tab can't load; same as the tab's rows. price = ₹ per person per project, materials included
+  {name:'Paint a mini canvas', description:'A mountain sunset in acrylics, guided step by step.', includes:'6×6 inch canvas, acrylic colours, brushes, palette, apron', price:449, mins:60, ages:'5+'},
+  {name:'Aipan coaster pair', description:'Kumaoni Aipan patterns in geru red and white on two coasters.', includes:'2 wooden coasters, geru and white paint, fine brushes, sealant', price:449, mins:60, ages:'8+'},
+  {name:'Decorate a pillar candle', description:'Pressed flowers, napkin art and gold details.', includes:'2×4 inch pillar candle, printed napkins, dried flowers, glue, gold pen', price:449, mins:45, ages:'8+'},
+  {name:'Pour a scented soy candle', description:'Pick a scent and pour your own candle. Ready to carry home in about an hour.', includes:'Soy wax, fragrance oil, glass jar with lid, cotton wick, label', price:599, mins:60, ages:'12+'},
+  {name:'Texture art mini canvas', description:'Raised palette-knife flowers you can feel.', includes:'6×6 inch canvas, texture paste, palette knives, acrylic colours, apron', price:649, mins:75, ages:'12+'},
+  {name:"Kids' wooden ornament", description:'A wooden star, heart or animal to hang at home.', includes:'Wooden shape, kid-safe colours, brushes, ribbon', price:299, mins:30, ages:'4+'},
 ];
 const MK_ICONS = [['texture','🖌️'],['aipan','🪔'],['coaster','🪔'],['candle','🕯️'],['canvas','🎨'],['ornament','⭐'],['tote','👜'],['print','👜'],['clay','🏺'],['pot','🏺']];
 const MK_MOMENTS = [
@@ -1011,7 +1011,7 @@ const MK_RULES = [
   'Drop-off is for up to 2 hours per visit.',
   'At check-in we take the mobile number of the family member dropping off. Children are handed back only to that person.',
   'We don\u2019t give food or medicine. Please send snacks or medicines along if needed.',
-  'Pay at check-in: per person per hour, all materials included.',
+  'Pay at check-in: the project price, all materials included. Extra supervision after the project is \u20b9149 per half hour.',
 ];
 const MK_RULES_HI = [
   '6 साल और उससे बड़े बच्चों को छोड़ सकते हैं। छोटे बच्चे किसी बड़े के साथ आएँ जो साथ रुके।',
@@ -1019,7 +1019,7 @@ const MK_RULES_HI = [
   'ड्रॉप-ऑफ़ एक बार में 2 घंटे तक।',
   'चेक-इन पर छोड़ने वाले परिवार के सदस्य का मोबाइल नंबर लेते हैं। बच्चे सिर्फ़ उसी व्यक्ति को सौंपे जाते हैं।',
   'हम खाना या दवा नहीं देते। ज़रूरत हो तो नाश्ता या दवा साथ भेजें।',
-  'भुगतान चेक-इन पर: प्रति व्यक्ति प्रति घंटा, सारी सामग्री सहित।',
+  'भुगतान चेक-इन पर: प्रोजेक्ट की कीमत, सारी सामग्री सहित। प्रोजेक्ट के बाद अतिरिक्त देखरेख \u20b9149 प्रति आधा घंटा।',
 ];
 /* Makery questions: shown at the bottom of The Makery. Workshop questions stay in faqItems(). */
 function makeryFaqItems(){
@@ -1029,20 +1029,20 @@ function makeryFaqItems(){
     : (hi ? 'द मेकरी जल्द खुल रहा है। किसी भी प्रोजेक्ट पर “खुलने पर बताएँ” दबाइए, खुलते ही हम WhatsApp पर बता देंगे।'
           : 'The Makery is opening soon. Tap “Notify me” on any project and we’ll message you on WhatsApp as soon as it opens.');
   return hi ? [
-    ['द मेकरी, कार्यशाला से कैसे अलग है?','कार्यशाला एक तय तारीख़ और समय पर होती है, जिसमें पूरा ग्रुप कलाकार के साथ एक ही चीज़ बनाता है। द मेकरी में आप जब चाहें आइए, एक छोटा प्रोजेक्ट चुनिए और अपनी रफ़्तार से बनाइए। भुगतान घंटे के हिसाब से।'],
+    ['द मेकरी, कार्यशाला से कैसे अलग है?','कार्यशाला एक तय तारीख़ और समय पर होती है, जिसमें पूरा ग्रुप कलाकार के साथ एक ही चीज़ बनाता है। द मेकरी में आप जब चाहें आइए, एक छोटा प्रोजेक्ट चुनिए और अपनी रफ़्तार से बनाइए। हर प्रोजेक्ट की एक तय कीमत।'],
     ['कब और कहाँ खुला है?', when],
     ['क्या पहले से बुक करना होगा?','नहीं, सीधे आ जाइए। 5 या उससे ज़्यादा लोगों के लिए टेबल पहले से रिज़र्व करें।'],
-    ['कीमत कैसे लगती है?','प्रति व्यक्ति प्रति घंटा, सारी सामग्री सहित: कैनवास, रंग, ब्रश, वैक्स, एप्रन। कम से कम 1 घंटा, फिर हर आधे घंटे के हिसाब से। भुगतान चेक-इन पर UPI से।'],
-    ['क्या बच्चों को छोड़कर जा सकते हैं?','हाँ, 6 साल और उससे बड़े बच्चों को 2 घंटे तक छोड़ सकते हैं। चेक-इन पर छोड़ने वाले का मोबाइल नंबर लेते हैं और बच्चे सिर्फ़ उसी को सौंपे जाते हैं। छोटे बच्चे किसी बड़े के साथ आएँ जो साथ रुके।'],
+    ['कीमत कैसे लगती है?','हर प्रोजेक्ट की प्रति व्यक्ति एक तय कीमत, जो उसके कार्ड पर लिखी है, सारी सामग्री सहित: कैनवास, रंग, ब्रश, वैक्स, एप्रन। जितना समय चाहिए लीजिए। भुगतान चेक-इन पर UPI से।'],
+    ['क्या बच्चों को छोड़कर जा सकते हैं?','हाँ, 6 साल और उससे बड़े बच्चों को 2 घंटे तक छोड़ सकते हैं। चेक-इन पर छोड़ने वाले का मोबाइल नंबर लेते हैं और बच्चे सिर्फ़ उसी को सौंपे जाते हैं। छोटे बच्चे किसी बड़े के साथ आएँ जो साथ रुके। प्रोजेक्ट की कीमत में प्रोजेक्ट का समय शामिल है; उसके बाद हर आधे घंटे के \u20b9149।'],
     ['क्या बुज़ुर्ग या बड़े भी आ सकते हैं?','बिल्कुल। द मेकरी हर उम्र के लिए है। चलने-फिरने या सुनने से जुड़ी कोई ज़रूरत हो तो बताइए, हम आराम से बैठा देंगे और मदद करेंगे।'],
     ['क्या पेंटिंग आनी चाहिए?','नहीं। हर प्रोजेक्ट में हमारी टीम कदम-दर-कदम मदद करती है।'],
     ['बनाई चीज़ कब घर ले जा सकते हैं?','ज़्यादातर चीज़ें उसी दिन। मोमबत्ती लगभग एक घंटे में तैयार हो जाती है; टेक्सचर आर्ट को पूरी तरह सूखने में एक दिन लग सकता है।'],
   ] : [
-    ['How is The Makery different from a workshop?','A workshop runs on a set date and time, with the whole group making the same piece alongside the artist. At The Makery you walk in when it suits you, pick a small project and make it at your own pace. You pay by the hour.'],
+    ['How is The Makery different from a workshop?','A workshop runs on a set date and time, with the whole group making the same piece alongside the artist. At The Makery you walk in when it suits you, pick a small project and make it at your own pace. You pay one price per project.'],
     ['When and where is it open?', when],
     ['Do I need to book?','No, just walk in. For groups of 5 or more, reserve a table first.'],
-    ['How does pricing work?','Per person per hour, with all materials included: canvas, colours, brushes, wax and aprons. 1 hour minimum, then charged by the half hour. Pay by UPI at check-in.'],
-    ['Can I drop off my children?','Yes. Children 6 and older can stay for up to 2 hours. At check-in we take the mobile number of the person dropping off, and children are handed back only to them. Younger children are welcome with an adult who stays.'],
+    ['How does pricing work?','One price per person for each project, shown on its card, with all materials included: canvas, colours, brushes, wax and aprons. Take as long as you need. Pay by UPI at check-in.'],
+    ['Can I drop off my children?','Yes. Children 6 and older can stay for up to 2 hours. At check-in we take the mobile number of the person dropping off, and children are handed back only to them. Younger children are welcome with an adult who stays. The project price covers their project; extra time after it is \u20b9149 per half hour.'],
     ['Can adults and elders join?','Of course. The Makery is for every age. Tell us about any mobility or hearing needs and we’ll seat and help them comfortably.'],
     ['Do I need to know how to paint?','No. Our team helps you step by step with every project.'],
     ['When can I take my piece home?','Most pieces go home the same day. Candles are ready in about an hour; texture art can need a day to dry fully.'],
@@ -1055,7 +1055,7 @@ function makeryFaq(){
     el('div',{class:'faq-list'}, makeryFaqItems().map(([q,a]) => el('details',{class:'faq-item'},
       el('summary',null, el('span',null,q), el('span',{class:'faq-plus','aria-hidden':'true'},'+')), el('p',null,a)))));
 }
-const mkRate = p => Number(p.rate || p.price) || 0;
+const mkPrice = p => Number(p.price || p.rate) || 0;   // per person, per project (the Sheet sends it as rate)
 const mkTime = (m, hi) => m < 60 ? `${m} min` : (m % 60 ? `${Math.floor(m/60)} h ${m%60} min` : (m === 60 ? (hi?'1 घंटा':'1 hour') : `${m/60} ${hi?'घंटे':'hours'}`));
 const mkIcon = n => (MK_ICONS.find(([k]) => n.toLowerCase().includes(k)) || [0,'✨'])[1];
 function makerySection(){
@@ -1070,7 +1070,7 @@ function makerySection(){
     p.includes ? el('div',{class:'mk-inc'}, el('b',null, hi?'शामिल: ':'Includes: '), p.includes) : null,
     el('div',{class:'mk-meta'}, [p.mins ? (hi?`आमतौर पर ${mkTime(p.mins,hi)}`:`Usually ${mkTime(p.mins,hi)}`) : '', p.ages ? (hi?`उम्र ${p.ages}`:`Ages ${p.ages}`) : ''].filter(Boolean).join(' · ')),
     el('div',{class:'mk-foot'},
-      el('span',{class:'mk-price'}, mkRate(p) ? [el('b',null,inr(mkRate(p))), el('small',null, hi?' / घंटा':' / hour')] : ''),
+      el('span',{class:'mk-price'}, mkPrice(p) ? [el('b',null,inr(mkPrice(p))), el('small',null, hi?' प्रति व्यक्ति':' per person')] : ''),
       p.soldOut ? el('span',{class:'mk-out'}, hi?'अभी उपलब्ध नहीं':'Sold out today')
         : el('button',{type:'button',class:'btn btn-sm '+(open?'btn-primary':'btn-ghost'),onclick:()=>openMakery(p, open)}, open ? (hi?'टेबल रिज़र्व करें':'Reserve a table') : (hi?'खुलने पर बताएँ':'Notify me'))));
   return el('section',{class:'block mk-block',id:'makery'},
@@ -1078,8 +1078,8 @@ function makerySection(){
       el('div',null,
         el('div',{class:'eyebrow',style:'color:var(--geru);opacity:1'}, hi?'बनाइए · अनुभव कीजिए · घर ले जाइए':'Make · Experience · Take home'),
         el('h2',null, hi?'द मेकरी':'The Makery'),
-        el('p',{class:'desc'}, hi?'आइए, एक प्रोजेक्ट चुनिए और अपनी रफ़्तार से बनाइए। भुगतान घंटे के हिसाब से, और सारी सामग्री शामिल: कैनवास, रंग, ब्रश, वैक्स, एप्रन और मदद।'
-          :'Walk in, pick a project and make it at your own pace. You pay by the hour, and everything you use is included: canvas, colours, brushes, wax, aprons and a helping hand.')),
+        el('p',{class:'desc'}, hi?'आइए, एक प्रोजेक्ट चुनिए और अपनी रफ़्तार से बनाइए। हर प्रोजेक्ट की एक तय कीमत, और सारी सामग्री शामिल: कैनवास, रंग, ब्रश, वैक्स, एप्रन और मदद।'
+          :'Walk in, pick a project and make it at your own pace. One price per project, with everything you use included: canvas, colours, brushes, wax, aprons and a helping hand.')),
       el('div',{class:'mk-when'+(open?'':' soon')},
         el('b',null, open ? hours : (hi?'जल्द खुल रहा है':'Opening soon')),
         el('span',null, open ? (place ? place.split(',').slice(0,2).join(',') : '') : (hi?'पहले जानने के लिए "खुलने पर बताएँ" दबाइए':'Tap "Notify me" to hear first')))),
@@ -1091,31 +1091,30 @@ function makerySection(){
       el('ul',null, (hi ? MK_RULES_HI : MK_RULES).map(r => el('li',null,r)))),
     el('h3',{class:'mk-menu-h'}, hi?'आज क्या बनाएँगे?':'What will you make today?'),
     el('div',{class:'mk-grid'}, list.map(card)),
-    el('p',{class:'mk-note'}, hi?'दर प्रति व्यक्ति प्रति घंटा है, कम से कम 1 घंटा, फिर हर आधे घंटे के हिसाब से। 5 से ज़्यादा लोगों के लिए टेबल पहले से रिज़र्व करें।':'Rates are per person per hour: 1 hour minimum, then charged by the half hour. For groups of 5 or more, reserve a table first. Birthday or office group? See Parties & groups below.'),
+    el('p',{class:'mk-note'}, hi?'हर प्रोजेक्ट की कीमत प्रति व्यक्ति है, सामग्री और मदद सहित, कोई घड़ी नहीं चलती। बच्चों को छोड़ रहे हैं? प्रोजेक्ट के बाद हर अतिरिक्त आधे घंटे के ₹149, कुल 2 घंटे तक। 5 या उससे ज़्यादा लोगों के लिए टेबल पहले से रिज़र्व करें।':'One price per person for each project, materials and help included, with no clock running. Dropping children off? ₹149 for each extra half hour after their project, up to 2 hours in all. For groups of 5 or more, reserve a table first. Birthday or office group? See Parties & groups below.'),
     makeryFaq());
 }
 function openMakery(p, open){
   const c = loadContact(), hi = S.lang==='hi';
   const name = el('input',{autocomplete:'name',value:c.name||''}), phone = el('input',{inputmode:'tel',autocomplete:'tel',value:c.phone||'',placeholder:'10-digit mobile'});
   const people = el('select',null,[1,2,3,4,5,6,8,10].map(n=>el('option',{value:n},n)));
-  const hrs = el('select',null,[1,1.5,2,2.5,3].map(n=>el('option',{value:n, selected: n === Math.max(1, Math.ceil((p.mins||60)/30)/2) || null}, n===1?(hi?'1 घंटा':'1 hour'):`${n} ${hi?'घंटे':'hours'}`)));
-  const est = () => inr(mkRate(p) * Number(people.value) * Number(hrs.value));
+  const est = () => inr(mkPrice(p) * Number(people.value));
   const today = new Date(Date.now() + 330*60000).toISOString().slice(0,10);   // India date
   const day = el('input',{type:'date',min:today,value:today}), time = el('select',null,['Morning','Afternoon','Evening'].map(x=>el('option',{value:x},x)));
   const err = el('div',{class:'err',role:'alert'});
   const msg = () => open
-    ? `Hi ${studioName()}! I'd like to reserve a table at The Makery.\nProject: ${p.name} (${inr(mkRate(p))} per person per hour)\nPeople: ${people.value} · Hours: ${hrs.value} (about ${est()})\nDay: ${day.value} · ${time.value}\nName: ${name.value.trim()}\nPhone: ${phone.value.trim()}`
+    ? `Hi ${studioName()}! I'd like to reserve a table at The Makery.\nProject: ${p.name} (${inr(mkPrice(p))} per person)\nPeople: ${people.value} (about ${est()})\nDay: ${day.value} · ${time.value}\nName: ${name.value.trim()}\nPhone: ${phone.value.trim()}`
     : `Hi ${studioName()}! Please tell me when The Makery opens. I'd like to try "${p.name}".\nName: ${name.value.trim()}\nPhone: ${phone.value.trim()}`;
   const send = el('button',{type:'submit',class:'btn btn-primary'}, open ? (hi?'WhatsApp पर भेजें':'Send on WhatsApp') : (hi?'मुझे बताएँ':'Notify me'));
   openModal(modal(el('h2',null, open ? (hi?'टेबल रिज़र्व करें':'Reserve a table at The Makery') : (hi?'खुलने पर बताएँ':'Get told when it opens')),
-    el('p',{class:'desc'}, `${mkIcon(p.name)} ${p.name}${mkRate(p) ? ' · '+inr(mkRate(p))+(hi?' प्रति व्यक्ति प्रति घंटा, सामग्री सहित':' per person per hour, materials included') : ''}`),
+    el('p',{class:'desc'}, `${mkIcon(p.name)} ${p.name}${mkPrice(p) ? ' · '+inr(mkPrice(p))+(hi?' प्रति व्यक्ति, सामग्री सहित':' per person, materials included') : ''}`),
     el('form',{novalidate:true,onsubmit:e=>{ e.preventDefault(); err.textContent='';
       if (!validPerson(name, phone, err)) return; saveContact({name:name.value.trim(), phone:phone.value.trim()});
       const l = waLink(msg()); if (l) window.open(l,'_blank','noopener');
       track(open ? 'makery_reserve' : 'makery_notify', {project:p.name}); closeModal();
       toast(open ? (hi?'संदेश तैयार है। WhatsApp पर भेज दीजिए।':'Your message is ready. Send it in WhatsApp and we’ll confirm.') : (hi?'धन्यवाद! खुलते ही हम बताएँगे।':'Thanks! We’ll message you when The Makery opens.')); }},
       el('div',{class:'form'}, field(t('name'),name,true), field(t('mobile'),phone),
-        open ? field(hi?'कितने लोग':'People', people) : null, open ? field(hi?'कितने घंटे':'Hours', hrs) : null, open ? field(hi?'दिन':'Day', day) : null, open ? field(hi?'समय':'Time', time) : null), err,
+        open ? field(hi?'कितने लोग':'People', people) : null, open ? field(hi?'दिन':'Day', day) : null, open ? field(hi?'समय':'Time', time) : null), err,
       el('div',{class:'modal-foot'}, el('button',{type:'button',class:'btn btn-ghost',onclick:closeModal}, hi?'रद्द करें':'Cancel'), send))));
 }
 (function(){ const st = document.createElement('style'); st.textContent = `

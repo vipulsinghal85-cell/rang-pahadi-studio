@@ -21,15 +21,15 @@ const HEAD = {
   Reviews: ['Created', 'Name', 'Workshop', 'Rating', 'Review', 'Show on website'],
   Enquiries: ['Created', 'Name', 'Phone', 'Email', 'Organisation', 'Type', 'People', 'Preferred date', 'Message', 'Handled'],
   Artwork: ['Photo', 'Title', 'Medium', 'Size', 'Price', 'Status', 'Notes'],
-  Makery: ['Project', 'Description', 'Includes', 'Price per hour (₹)', 'Usual time (min)', 'Ages', 'Photo', 'Status'],
+  Makery: ['Project', 'Description', 'Includes', 'Price (₹)', 'Usual time (min)', 'Ages', 'Photo', 'Status'],
 };
-const MAKERY_STARTER = [   // price is per person per hour, materials included
-  ['Paint a mini canvas', 'A mountain sunset in acrylics, guided step by step.', '6×6 inch canvas, acrylic colours, brushes, palette, apron', 399, 60, '5+', '', 'Available'],
-  ['Aipan coaster pair', 'Kumaoni Aipan patterns in geru red and white on two coasters.', '2 wooden coasters, geru and white paint, fine brushes, sealant', 399, 60, '8+', '', 'Available'],
-  ['Decorate a pillar candle', 'Pressed flowers, napkin art and gold details.', '2×4 inch pillar candle, printed napkins, dried flowers, glue, gold pen', 399, 45, '8+', '', 'Available'],
-  ['Pour a scented soy candle', 'Pick a scent and pour your own candle. Ready to carry home in about an hour.', 'Soy wax, fragrance oil, glass jar with lid, cotton wick, label', 549, 60, '12+', '', 'Available'],
-  ['Texture art mini canvas', 'Raised palette-knife flowers you can feel.', '6×6 inch canvas, texture paste, palette knives, acrylic colours, apron', 549, 75, '12+', '', 'Available'],
-  ['Kids\' wooden ornament', 'A wooden star, heart or animal to hang at home.', 'Wooden shape, kid-safe colours, brushes, ribbon', 249, 30, '4+', '', 'Available'],
+const MAKERY_STARTER = [   // price is per person, per project, materials included
+  ['Paint a mini canvas', 'A mountain sunset in acrylics, guided step by step.', '6×6 inch canvas, acrylic colours, brushes, palette, apron', 449, 60, '5+', '', 'Available'],
+  ['Aipan coaster pair', 'Kumaoni Aipan patterns in geru red and white on two coasters.', '2 wooden coasters, geru and white paint, fine brushes, sealant', 449, 60, '8+', '', 'Available'],
+  ['Decorate a pillar candle', 'Pressed flowers, napkin art and gold details.', '2×4 inch pillar candle, printed napkins, dried flowers, glue, gold pen', 449, 45, '8+', '', 'Available'],
+  ['Pour a scented soy candle', 'Pick a scent and pour your own candle. Ready to carry home in about an hour.', 'Soy wax, fragrance oil, glass jar with lid, cotton wick, label', 599, 60, '12+', '', 'Available'],
+  ['Texture art mini canvas', 'Raised palette-knife flowers you can feel.', '6×6 inch canvas, texture paste, palette knives, acrylic colours, apron', 649, 75, '12+', '', 'Available'],
+  ['Kids\' wooden ornament', 'A wooden star, heart or animal to hang at home.', 'Wooden shape, kid-safe colours, brushes, ribbon', 299, 30, '4+', '', 'Available'],
 ];
 const CATEGORIES = ['Traditional Indian art', 'Painting & drawing', 'Mixed media & texture', 'Candle making', 'Handicrafts', 'Kids'];
 const NEW_TAGLINE = "Hands-on art workshops in the Doon valley: Aipan, painting, texture art, candle making, block printing and kids' classes. All materials included.";
@@ -344,7 +344,7 @@ function makery_() {
     .map(r => ({
       name: String(r['Project']).trim(), description: String(r['Description'] || '').trim(),
       includes: String(r['Includes'] || '').trim(),
-      rate: Number(String(r['Price per hour (₹)'] || r['Price (₹)'] || '').replace(/[^\d.]/g, '')) || 0,
+      rate: Number(String(r['Price (₹)'] || r['Price per hour (₹)'] || '').replace(/[^\d.]/g, '')) || 0,
       mins: Number(r['Usual time (min)'] || r['Time (min)']) || 0,
       ages: String(r['Ages'] || '').trim(), photo: photoUrl_(r['Photo']),
       soldOut: String(r['Status'] || '').trim().toLowerCase() === 'sold out',
@@ -559,7 +559,7 @@ function setup() {
     ['parking', '', 'Optional: parking / how to find us, shown in the FAQ'],
     ['cancelPolicy', '', 'Optional: your cancellation rule, shown in the FAQ (default: free date change up to 48 hours before)'],
     ['instagram', '', 'Your Instagram handle (e.g. rangpahadi) or profile link'],
-    ['makeryHours', '', 'The Makery (walk-in making, priced per hour): open hours, e.g. "Sat & Sun, 11 AM – 6 PM". Leave empty to show "Opening soon".'],
+    ['makeryHours', '', 'The Makery (walk-in making, one price per project): open hours, e.g. "Sat & Sun, 11 AM – 6 PM". Leave empty to show "Opening soon".'],
     ['makeryPlace', '', 'Optional: where the Makery runs, if not the studio address (e.g. a partner café)'],
     ['artworkFolderId', '', 'Link of a Google Drive folder with YOUR artwork (the Gallery section). Titles, sizes and prices come from the Artwork tab; a photo with no row there uses its Drive description, e.g. "Monsoon Aipan · Acrylic on canvas · ₹4,500"'],
   ];
@@ -599,7 +599,7 @@ function setup() {
   const m = ensure_(ss, TAB.M, HEAD.Makery);
   if (m.getLastRow() < 2) m.getRange(2, 1, MAKERY_STARTER.length, MAKERY_STARTER[0].length).setValues(MAKERY_STARTER);
   [220, 320, 340, 120, 120, 70, 220, 100].forEach((w, i) => m.setColumnWidth(i + 1, w));
-  note_(m, 'Price per hour (₹)', 'Per person per hour, all materials included. 1 hour minimum, then by the half hour.');
+  note_(m, 'Price (₹)', 'Per person, per project, all materials included. Dropped-off children: ₹149 per extra half hour after the project (shown on the website).');
   m.getRange('H2:H').setDataValidation(SpreadsheetApp.newDataValidation().requireValueInList(['Available', 'Sold out', 'Hide'], true).setAllowInvalid(true).build());
   note_(m, 'Project', 'One walk-in project per row, shown on the website in this order.');
   note_(m, 'Status', 'Available, Sold out (shown but not reservable) or Hide (not shown).');
