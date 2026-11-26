@@ -656,6 +656,27 @@ function openWorkshop(w){
 .wsd-btns{display:flex;gap:8px;flex-wrap:wrap}
 .wsd-cal{font-size:14px;color:var(--muted);align-self:flex-start}
 @media (max-width:480px){.wsd-facts{grid-template-columns:1fr}.wsd-btns{width:100%}.wsd-btns .btn{flex:1;justify-content:center}}
+/* wider screens (laptops, and phones in "desktop site" mode, which shrink the whole page): a big, readable popup */
+@media (min-width:700px){
+.wsd{margin:auto}   /* centred vertically, but still scrolls from the top when taller than the screen */
+.wsd{max-width:min(860px,92vw)}
+.wsd-top{height:190px;padding:0 32px 20px}.wsd-top .deva{font-size:34px}
+.wsd-motif{width:440px;height:440px;right:-80px;top:-140px}
+.wsd-photo img{max-height:380px}
+.wsd-x{width:48px;height:48px;font-size:30px;top:16px;right:16px}
+.wsd-body{padding:28px 32px 30px;gap:20px}
+.wsd-body .when{gap:16px}
+.wsd-body .datebox{width:72px;padding:9px 0}.wsd-body .datebox b{font-size:30px}.wsd-body .datebox span{font-size:15px}
+.wsd-body .cat{font-size:15px}
+.wsd-body h2{font-size:36px}
+.wsd-facts{font-size:19px;gap:12px 24px}
+.wsd-desc{font-size:21px}
+.wsd-inc{padding:18px 22px}.wsd-inc b{font-size:15px}.wsd-inc ul{font-size:19px}
+.wsd .seats{font-size:16px}.wsd .meter{height:8px}
+.wsd-foot{padding-top:20px}.wsd-foot .price{font-size:34px}.wsd-foot .price small{font-size:16px}
+.wsd-btns .btn{font-size:18px;padding:14px 24px}
+.wsd-cal{font-size:17px}
+}
 @media (prefers-reduced-motion:no-preference){.wsd{animation:wsd-in .22s ease both}@keyframes wsd-in{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}}
 `; document.head.appendChild(st); })();
 
