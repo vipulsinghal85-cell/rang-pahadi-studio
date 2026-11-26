@@ -330,7 +330,6 @@ function render(){
           el('button',{type:'button',class:'quiz-link',onclick:openQuiz}, t('not_sure'),' ', el('b',null,t('find_btn')+' →'))),
         chips, grid),
       aboutSection(st),
-      quoteSection(),
       artworkSection(),
       gallerySection(),
       reviewsSection(),
@@ -340,7 +339,8 @@ function render(){
       giftSection(),
       faqSection(st),
       makerySection(),
-      el('div',{class:'split',id:'groups'}, groupsPanel(groupWA), visitPanel(st))
+      // left column: Parties & groups, then (from enhance.js) How booking works, then the thought for today; right: Visit & pay
+      el('div',{class:'split',id:'groups'}, el('div',{class:'g-left'}, groupsPanel(groupWA), quoteSection()), visitPanel(st))
     ),
     el('footer',null, el('div',{class:'wrap'},
       el('span',null, `© ${new Date().getFullYear()} ${studioName()} · ${st.city||'Dehradun, Uttarakhand'}`),
@@ -1087,6 +1087,13 @@ function quoteSection(){
 .qotd-by b{color:var(--ink);font-weight:700}
 .qotd-actions{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:16px}
 .qotd-share{font-size:14px;font-weight:700;color:var(--geru)}
+/* in the bottom-left column beside Visit & pay */
+.g-left{display:flex;flex-direction:column;gap:16px;min-width:0}
+.rb-col>.g-left{display:contents}   /* when enhance.js wraps the column, let the quote fall in after How booking works */
+.rb-col .qotd{order:5}
+.g-left .qotd{margin:0;max-width:none;padding:24px 24px 22px;gap:12px}
+.g-left .qotd-mark{font-size:72px}
+.g-left .qotd blockquote{font-size:clamp(22px,2.2vw,30px)}
 @media (max-width:640px){.qotd{margin-top:40px;padding:22px 20px;gap:10px}.qotd-mark{font-size:64px}}
 `; document.head.appendChild(st); })();
 

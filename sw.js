@@ -1,5 +1,5 @@
 /* Rang Pahadi Studio app: shows the newest site when online, the last saved copy when offline. */
-const CACHE = 'rp-v53';
+const CACHE = 'rp-v54';
 const CORE = ['/', '/index.html', '/style.css', '/app.js', '/config.js', '/qrcode.js', '/enhance.js?v=8', '/logo-192.png', '/logo-512.png', '/favicon-64.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(CORE)).catch(() => {})); self.skipWaiting(); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
