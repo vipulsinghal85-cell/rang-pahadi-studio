@@ -330,6 +330,7 @@ function render(){
           el('button',{type:'button',class:'quiz-link',onclick:openQuiz}, t('not_sure'),' ', el('b',null,t('find_btn')+' →'))),
         chips, grid),
       aboutSection(st),
+      quoteSection(),
       artworkSection(),
       gallerySection(),
       reviewsSection(),
@@ -1024,6 +1025,64 @@ function giftSection(){
 }
 
 /* -------------------------------------------------------------- about */
+/* ====================================================== thought for today
+ * One quote a day, changing at midnight India time, the same for every visitor that day.
+ * Famous quotes are only ones with a known source (noted beside each); the rest are studio sayings.
+ * To add one, put a line in this list. hi = Hindi text (studio lines only; famous quotes stay in their words). */
+const QUOTES = [
+  {q:'If you hear a voice within you say “you cannot paint,” then by all means paint, and that voice will be silenced.', by:'Vincent van Gogh', src:'letter to his brother Theo, 1883'},
+  {q:'Everyone can make art. Most people just need a table, good materials and an afternoon.', hi:'हर कोई कला बना सकता है। ज़्यादातर लोगों को बस एक मेज़, अच्छी सामग्री और एक दोपहर चाहिए।', by:'Akanksha Singhal', src:'Rang Pahadi Studio'},
+  {q:'Have nothing in your houses that you do not know to be useful, or believe to be beautiful.', by:'William Morris', src:'“The Beauty of Life”, 1880'},
+  {q:'Every Aipan begins with a single dot and a steady breath.', hi:'हर ऐपण एक बिंदु और एक ठहरी हुई साँस से शुरू होता है।', by:'Rang Pahadi Studio'},
+  {q:'Every artist was first an amateur.', by:'Ralph Waldo Emerson', src:'“Progress of Culture”, 1867'},
+  {q:'To practice any art, no matter how well or badly, is a way to make your soul grow.', by:'Kurt Vonnegut', src:'A Man Without a Country, 2005'},
+  {q:'Messy hands, calm mind.', hi:'हाथ रंग में, मन सुकून में।', by:'Rang Pahadi Studio'},
+  {q:'Slow down. Mix the colour. Watch it change.', hi:'धीमे चलिए। रंग मिलाइए। उसे बदलते देखिए।', by:'Rang Pahadi Studio'},
+  {q:'Great things are done by a series of small things brought together.', by:'Vincent van Gogh', src:'letter to his brother Theo, 1882'},
+  {q:'The hills never hurry, and neither should your brush.', hi:'पहाड़ कभी जल्दी में नहीं होते, आपका ब्रश भी न हो।', by:'Rang Pahadi Studio'},
+  {q:'You can’t use up creativity. The more you use, the more you have.', by:'Maya Angelou'},
+  {q:'Have no fear of perfection. You’ll never reach it.', by:'Salvador Dalí', src:'50 Secrets of Magic Craftsmanship, 1948'},
+  {q:'A wobbly line drawn with joy beats a perfect line never drawn.', hi:'खुशी से खींची टेढ़ी लकीर, कभी न खींची सीधी लकीर से बेहतर है।', by:'Rang Pahadi Studio'},
+  {q:'I found I could say things with color and shapes that I couldn’t say any other way, things I had no words for.', by:'Georgia O’Keeffe'},
+  {q:'Colour is a power which directly influences the soul.', by:'Wassily Kandinsky', src:'Concerning the Spiritual in Art, 1911'},
+  {q:'What you make with your hands, you remember with your heart.', hi:'जो हाथों से बनाते हैं, उसे दिल याद रखता है।', by:'Rang Pahadi Studio'},
+  {q:'Nothing is a mistake. There’s no win and no fail. There’s only make.', by:'Corita Kent', src:'rules for her art students'},
+  {q:'The artist is the lover of Nature, therefore he is her slave and her master.', by:'Rabindranath Tagore', src:'Stray Birds, 1916'},
+  {q:'Geru red, rice-paste white and a little patience: that’s all Aipan asks.', hi:'गेरू का लाल, चावल का सफ़ेद और थोड़ा धैर्य: ऐपण बस इतना माँगता है।', by:'Rang Pahadi Studio'},
+  {q:'We don’t make mistakes, just happy accidents.', by:'Bob Ross', src:'The Joy of Painting'},
+  {q:'A candle you poured yourself burns a little brighter.', hi:'अपने हाथ से बनी मोमबत्ती थोड़ी ज़्यादा रोशनी देती है।', by:'Rang Pahadi Studio'},
+  {q:'Put the phone down, pick a brush up. One afternoon is enough to begin.', hi:'फ़ोन रखिए, ब्रश उठाइए। शुरुआत के लिए एक दोपहर काफ़ी है।', by:'Rang Pahadi Studio'},
+];
+function quoteOfDay(){
+  const day = Math.floor((Date.now() + 330 * 60000) / 86400000);   // days since 1970 in India time
+  return QUOTES[((day % QUOTES.length) + QUOTES.length) % QUOTES.length];
+}
+function quoteSection(){
+  const q = quoteOfDay(), hi = S.lang==='hi', text = (hi && q.hi) ? q.hi : q.q;
+  const today = new Date(Date.now() + 330 * 60000).toLocaleDateString(hi ? 'hi-IN' : 'en-IN', {day:'numeric', month:'long', timeZone:'UTC'});
+  const share = 'https://wa.me/?text=' + encodeURIComponent(`“${q.q}” — ${q.by}\n\nThought for today from ${studioName()}: ${siteUrl()}`);   // no number: visitor picks who to send it to
+  return el('section',{class:'qotd','aria-label':hi?'आज का विचार':'Thought for today'},
+    el('div',{class:'qotd-mark','aria-hidden':'true'},'“'),
+    el('div',{class:'qotd-body'},
+      el('div',{class:'eyebrow'}, (hi?'आज का विचार · ':'Thought for today · ') + today),
+      el('blockquote',{lang: (hi && q.hi) ? 'hi' : 'en'}, text),
+      el('div',{class:'qotd-by'}, '— ', el('b',null,q.by), q.src ? el('span',null, ', ' + q.src) : null),
+      share ? el('a',{class:'qotd-share',href:share,target:'_blank',rel:'noopener'}, hi?'WhatsApp पर भेजें':'Share on WhatsApp') : null));
+}
+(function(){ const st = document.createElement('style'); st.textContent = `
+.qotd{position:relative;margin:56px auto 8px;max-width:860px;display:flex;gap:18px;align-items:flex-start;padding:28px 30px;border-radius:22px;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--marigold,#e3a127) 14%,var(--surface)),color-mix(in srgb,var(--rhodo,#c8456a) 10%,var(--surface)));border:1px solid var(--line)}
+.qotd-mark{flex:none;font-family:"Instrument Serif",Georgia,serif;font-size:96px;line-height:.8;color:var(--geru);opacity:.8;margin-top:6px}
+.qotd-body{min-width:0}
+.qotd .eyebrow{color:var(--geru);opacity:1}
+.qotd blockquote{margin:10px 0 0;font-family:"Instrument Serif",Georgia,serif;font-style:italic;font-size:clamp(24px,3.2vw,34px);line-height:1.22;color:var(--ink);text-wrap:balance}
+.qotd blockquote:lang(hi){font-family:"Tiro Devanagari Hindi",serif;font-style:normal;font-size:clamp(22px,2.8vw,30px);line-height:1.45}
+.qotd-by{margin-top:12px;font-size:15px;color:var(--muted)}
+.qotd-by b{color:var(--ink);font-weight:700}
+.qotd-share{display:inline-block;margin-top:12px;font-size:14px;font-weight:700;color:var(--geru)}
+@media (max-width:640px){.qotd{margin-top:40px;padding:22px 20px;gap:10px}.qotd-mark{font-size:64px}}
+`; document.head.appendChild(st); })();
+
 function aboutSection(st){
   const text = (S.lang==='hi' && st.aboutHi) ? st.aboutHi : (st.about || '');
   const story = text.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).map(p => el('p',null,p));
