@@ -585,16 +585,79 @@ function workshopCard(w){
   const top = w.photo
     ? el('div',{class:'card-photo'}, el('img',{src:w.photo,alt:wTitle(w),loading:'lazy'}), el('span',{class:'card-photo-label'},t('make_label')))
     : el('div',{class:'card-band',style:`background:${th.band}`}, el('div',{class:'card-band-motif','aria-hidden':'true',html:motif(th.motif)}), el('span',{class:'deva'},th.deva));
-  return el('article',{class:'card'+(w.photo?' has-photo':''),style:`--band:${th.band}`},
+  // tapping anywhere on the card (except its own buttons) opens the larger detail view; the title is the keyboard target
+  return el('article',{class:'card ws-card'+(w.photo?' has-photo':''),style:`--band:${th.band}`,onclick:e=>{ if (!e.target.closest('button:not(.ws-open),a')) openWorkshop(w); }},
     top,
     el('div',{class:'card-body'},
-      el('div',{class:'when'}, dateBox(w), el('div',{style:'min-width:0'}, el('div',{class:'cat'}, catName(w.category)), el('h3',null,wTitle(w)))),
+      el('div',{class:'when'}, dateBox(w), el('div',{style:'min-width:0'}, el('div',{class:'cat'}, catName(w.category)), el('h3',null, el('button',{type:'button',class:'ws-open','aria-haspopup':'dialog'}, wTitle(w))))),
       el('div',{class:'meta'}, `${fmtDay(w.date)} · ${fmtTime(w.start)} · ${fmtDur(w.durationMins)}${w.level?' · '+w.level:''}`),
       wDesc(w) ? el('p',{class:'desc'}, wDesc(w)) : null,
       w.status==='cancelled' ? el('span',{class:'pill bad'},t('cancelled')) : seatMeter(w),
       el('div',{class:'cardfoot'}, el('div',{class:'price'}, inr(w.price), ' ', el('small',null, wUnit(w))), bookOrWait(w))));
 }
 
+/* Workshop detail: the card, enlarged, with everything a visitor needs before booking. */
+function openWorkshop(w){
+  const th = THEMES[w.category] || THEMES.default, hi = S.lang==='hi', st = S.settings || {};
+  const atCafe = /caf[eé]/i.test(`${w.title} ${w.description||''}`);   // e.g. Paint & Sip runs at a partner café, not the hall
+  const place = atCafe ? (hi ? 'पार्टनर कैफ़े (पता बुकिंग के बाद WhatsApp पर)' : 'Partner café (address sent after booking)')
+    : st.address ? st.address.split(',').slice(0,2).join(',') : (st.city || 'Dehradun');
+  const kids = /kid|child|camp|club/i.test(w.category + ' ' + w.title);
+  const inc = hi ? ['सारी सामग्री और एप्रन', 'कलाकार की कदम-दर-कदम मदद', kids ? 'बच्चे अपनी बनाई चीज़ घर ले जाते हैं' : 'अपनी बनाई चीज़ घर ले जाइए']
+                 : ['All materials and an apron', 'Step-by-step guidance from the artist', kids ? 'Children take home what they make' : 'Take home what you make'];
+  const ask = waLink(`Hi ${studioName()}! I have a question about "${wTitle(w)}" on ${fmtDay(w.date)}.`);
+  track('view_workshop', {workshop: w.title});
+  const top = w.photo
+    ? el('div',{class:'wsd-top wsd-photo'}, el('img',{src:w.photo,alt:wTitle(w)}))
+    : el('div',{class:'wsd-top',style:`background:${th.band}`}, el('div',{class:'card-band-motif wsd-motif','aria-hidden':'true',html:motif(th.motif)}), el('span',{class:'deva',lang:'hi'},th.deva));
+  openModal(el('div',{class:'modal wsd',role:'dialog','aria-modal':'true','aria-labelledby':'wsd-title',style:`--band:${th.band}`},
+    top,
+    el('button',{type:'button',class:'lb-x wsd-x',onclick:closeModal,'aria-label':t('close')},'×'),
+    el('div',{class:'wsd-body'},
+      el('div',{class:'when'}, dateBox(w), el('div',{style:'min-width:0'}, el('div',{class:'cat'}, catName(w.category)), el('h2',{id:'wsd-title'}, wTitle(w)))),
+      el('ul',{class:'wsd-facts'},
+        el('li',null, el('span',{'aria-hidden':'true'},'📅'), fmtDay(w.date)),
+        el('li',null, el('span',{'aria-hidden':'true'},'⏰'), `${fmtTime(w.start)} · ${fmtDur(w.durationMins)}`),
+        w.level ? el('li',null, el('span',{'aria-hidden':'true'},'🎨'), w.level) : null,
+        el('li',null, el('span',{'aria-hidden':'true'},'📍'), place)),
+      wDesc(w) ? el('p',{class:'wsd-desc'}, wDesc(w)) : null,
+      el('div',{class:'wsd-inc'}, el('b',null, hi?'शामिल':'Included'), el('ul',null, inc.map(x => el('li',null,x)))),
+      w.status==='cancelled' ? el('span',{class:'pill bad'},t('cancelled')) : seatMeter(w),
+      el('div',{class:'wsd-foot'},
+        el('div',{class:'price'}, inr(w.price), ' ', el('small',null, wUnit(w))),
+        el('div',{class:'wsd-btns'},
+          ask ? el('a',{class:'btn btn-ghost',href:ask,target:'_blank',rel:'noopener'}, hi?'सवाल पूछें':'Ask a question') : null,
+          bookOrWait(w))),
+      w.status!=='cancelled' ? el('a',{class:'wsd-cal',href:calLink(w),target:'_blank',rel:'noopener'},'📅 '+t('add_cal')) : null)), 'wsd-overlay');
+}
+(function(){ const st = document.createElement('style'); st.textContent = `
+.ws-card{cursor:pointer}
+.ws-open{all:unset;cursor:pointer;font:inherit;color:inherit;text-align:left}
+.ws-open:focus-visible{outline:2px solid var(--geru);outline-offset:3px;border-radius:4px}
+.wsd{position:relative;padding:0;overflow:hidden;max-width:560px}
+.wsd-top{position:relative;height:150px;overflow:hidden;color:#fff;display:flex;align-items:flex-end;padding:0 22px 16px}
+.wsd-top .deva{font-size:26px;position:relative}
+.wsd-motif{width:340px;height:340px;right:-70px;top:-110px}
+.wsd-photo{height:auto;padding:0;display:block}
+.wsd-photo img{width:100%;max-height:300px;object-fit:cover;display:block}
+.wsd-x{top:12px;right:12px}
+.wsd-body{padding:20px 22px 22px;display:flex;flex-direction:column;gap:14px}
+.wsd-body .when{display:flex;gap:12px;align-items:flex-start}
+.wsd-body h2{font-size:24px;line-height:1.2;margin:2px 0 0}
+.wsd-body .datebox{background:color-mix(in srgb,var(--band) 14%,var(--surface));color:var(--band)}
+.wsd-facts{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;font-size:14.5px}
+.wsd-facts li{display:flex;gap:8px;align-items:flex-start;line-height:1.35}
+.wsd-desc{margin:0;font-size:16px;line-height:1.55}
+.wsd-inc{background:color-mix(in srgb,var(--band) 8%,var(--surface));border-radius:14px;padding:12px 16px}
+.wsd-inc b{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--band)}
+.wsd-inc ul{margin:6px 0 0;padding-left:20px;font-size:14.5px;line-height:1.55}
+.wsd-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:14px}
+.wsd-foot .price{font-size:24px;font-weight:800}
+.wsd-btns{display:flex;gap:8px;flex-wrap:wrap}
+.wsd-cal{font-size:14px;color:var(--muted);align-self:flex-start}
+@media (max-width:480px){.wsd-facts{grid-template-columns:1fr}.wsd-btns{width:100%}.wsd-btns .btn{flex:1;justify-content:center}}
+@media (prefers-reduced-motion:no-preference){.wsd{animation:wsd-in .22s ease both}@keyframes wsd-in{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}}
+`; document.head.appendChild(st); })();
 
 /* ------------------------------------------------------------ gallery */
 function gallerySection(){
