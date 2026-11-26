@@ -659,7 +659,8 @@ html.modal-open{overflow:hidden}
 .wsd-btns{display:flex;gap:8px;flex-wrap:wrap}
 .wsd-cal{font-size:14px;color:var(--muted);align-self:flex-start;margin-top:-4px}
 @media (max-width:480px){.wsd-facts{grid-template-columns:1fr}.wsd-btns{width:100%}.wsd-btns .btn{flex:1;justify-content:center;padding-inline:10px;white-space:nowrap}.wsd-btns .wsd-close{flex:0 0 auto}}
-.wsd-close{color:var(--muted)}
+.wsd-close{color:var(--geru);border-color:color-mix(in srgb,var(--geru) 45%,transparent);font-weight:700}
+.wsd-close:hover{background:var(--geru-soft)}
 /* wider screens (laptops, and phones in "desktop site" mode, which shrink the whole page): a big, readable popup */
 @media (min-width:700px){
 .wsd{margin:auto}   /* centred vertically, but still scrolls from the top when taller than the screen */
