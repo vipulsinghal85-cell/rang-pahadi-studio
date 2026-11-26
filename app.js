@@ -627,6 +627,7 @@ function openWorkshop(w){
       el('div',{class:'wsd-foot'},
         el('div',{class:'price'}, inr(w.price), ' ', el('small',null, wUnit(w))),
         el('div',{class:'wsd-btns'},
+          el('button',{type:'button',class:'btn btn-ghost wsd-close',onclick:closeModal}, t('close')),
           ask ? el('a',{class:'btn btn-ghost',href:ask,target:'_blank',rel:'noopener'}, hi?'सवाल पूछें':'Ask a question') : null,
           bookOrWait(w))))), 'wsd-overlay');
 }
@@ -653,11 +654,12 @@ html.modal-open{overflow:hidden}
 .wsd-inc b{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--band)}
 .wsd-inc ul{margin:6px 0 0;padding-left:20px;font-size:14.5px;line-height:1.55}
 /* price and Book button stay pinned to the bottom of the screen while the details scroll */
-.wsd-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;bottom:0;z-index:2;background:var(--surface);margin:0 -22px -22px;padding:14px 22px calc(14px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);box-shadow:0 -8px 18px rgba(40,20,10,.06)}
+.wsd-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;bottom:-24px;z-index:2;   /* -24px = the overlay's bottom padding, so the bar sits flush with the screen edge */background:var(--surface);margin:0 -22px -22px;padding:14px 22px calc(14px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);box-shadow:0 -8px 18px rgba(40,20,10,.06)}
 .wsd-foot .price{font-size:24px;font-weight:800}
 .wsd-btns{display:flex;gap:8px;flex-wrap:wrap}
 .wsd-cal{font-size:14px;color:var(--muted);align-self:flex-start;margin-top:-4px}
-@media (max-width:480px){.wsd-facts{grid-template-columns:1fr}.wsd-btns{width:100%}.wsd-btns .btn{flex:1;justify-content:center}}
+@media (max-width:480px){.wsd-facts{grid-template-columns:1fr}.wsd-btns{width:100%}.wsd-btns .btn{flex:1;justify-content:center;padding-inline:10px;white-space:nowrap}.wsd-btns .wsd-close{flex:0 0 auto}}
+.wsd-close{color:var(--muted)}
 /* wider screens (laptops, and phones in "desktop site" mode, which shrink the whole page): a big, readable popup */
 @media (min-width:700px){
 .wsd{margin:auto}   /* centred vertically, but still scrolls from the top when taller than the screen */
