@@ -623,18 +623,19 @@ function openWorkshop(w){
       wDesc(w) ? el('p',{class:'wsd-desc'}, wDesc(w)) : null,
       el('div',{class:'wsd-inc'}, el('b',null, hi?'शामिल':'Included'), el('ul',null, inc.map(x => el('li',null,x)))),
       w.status==='cancelled' ? el('span',{class:'pill bad'},t('cancelled')) : seatMeter(w),
+      w.status!=='cancelled' ? el('a',{class:'wsd-cal',href:calLink(w),target:'_blank',rel:'noopener'},'📅 '+t('add_cal')) : null,
       el('div',{class:'wsd-foot'},
         el('div',{class:'price'}, inr(w.price), ' ', el('small',null, wUnit(w))),
         el('div',{class:'wsd-btns'},
           ask ? el('a',{class:'btn btn-ghost',href:ask,target:'_blank',rel:'noopener'}, hi?'सवाल पूछें':'Ask a question') : null,
-          bookOrWait(w))),
-      w.status!=='cancelled' ? el('a',{class:'wsd-cal',href:calLink(w),target:'_blank',rel:'noopener'},'📅 '+t('add_cal')) : null)), 'wsd-overlay');
+          bookOrWait(w))))), 'wsd-overlay');
 }
 (function(){ const st = document.createElement('style'); st.textContent = `
 .ws-card{cursor:pointer}
 .ws-open{all:unset;cursor:pointer;font:inherit;color:inherit;text-align:left}
 .ws-open:focus-visible{outline:2px solid var(--geru);outline-offset:3px;border-radius:4px}
-.wsd{position:relative;padding:0;overflow:hidden;max-width:560px}
+.wsd{position:relative;padding:0;overflow:hidden;overflow:clip;max-width:560px}   /* clip, not hidden: lets the price bar stick */
+html.modal-open{overflow:hidden}
 .wsd-top{position:relative;height:150px;overflow:hidden;color:#fff;display:flex;align-items:flex-end;padding:0 22px 16px}
 .wsd-top .deva{font-size:26px;position:relative}
 .wsd-motif{width:340px;height:340px;right:-70px;top:-110px}
@@ -651,10 +652,11 @@ function openWorkshop(w){
 .wsd-inc{background:color-mix(in srgb,var(--band) 8%,var(--surface));border-radius:14px;padding:12px 16px}
 .wsd-inc b{font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--band)}
 .wsd-inc ul{margin:6px 0 0;padding-left:20px;font-size:14.5px;line-height:1.55}
-.wsd-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:14px}
+/* price and Book button stay pinned to the bottom of the screen while the details scroll */
+.wsd-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;bottom:0;z-index:2;background:var(--surface);margin:0 -22px -22px;padding:14px 22px calc(14px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);box-shadow:0 -8px 18px rgba(40,20,10,.06)}
 .wsd-foot .price{font-size:24px;font-weight:800}
 .wsd-btns{display:flex;gap:8px;flex-wrap:wrap}
-.wsd-cal{font-size:14px;color:var(--muted);align-self:flex-start}
+.wsd-cal{font-size:14px;color:var(--muted);align-self:flex-start;margin-top:-4px}
 @media (max-width:480px){.wsd-facts{grid-template-columns:1fr}.wsd-btns{width:100%}.wsd-btns .btn{flex:1;justify-content:center}}
 /* wider screens (laptops, and phones in "desktop site" mode, which shrink the whole page): a big, readable popup */
 @media (min-width:700px){
@@ -673,10 +675,11 @@ function openWorkshop(w){
 .wsd-desc{font-size:21px}
 .wsd-inc{padding:18px 22px}.wsd-inc b{font-size:15px}.wsd-inc ul{font-size:19px}
 .wsd .seats{font-size:16px}.wsd .meter{height:8px}
-.wsd-foot{padding-top:20px}.wsd-foot .price{font-size:34px}.wsd-foot .price small{font-size:16px}
+.wsd-foot{margin:0 -32px -30px;padding:18px 32px 20px}.wsd-foot .price{font-size:34px}.wsd-foot .price small{font-size:16px}
 .wsd-btns .btn{font-size:18px;padding:14px 24px}
 .wsd-cal{font-size:17px}
 }
+@media (max-height:760px){.wsd-top{height:96px;padding-bottom:14px}.wsd-top .deva{font-size:22px}.wsd-photo img{max-height:200px}}   /* short screens: smaller banner, more room for details */
 @media (prefers-reduced-motion:no-preference){.wsd{animation:wsd-in .22s ease both}@keyframes wsd-in{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}}
 `; document.head.appendChild(st); })();
 
@@ -1570,9 +1573,10 @@ function openModal(node, size){
   lastFocus = document.activeElement;
   const ov = el('div',{class:'overlay'+(size?' '+size:''),onclick:e=>{ if(e.target===ov) closeModal(); }}, node);
   document.getElementById('modalRoot').replaceChildren(ov);
+  document.documentElement.classList.add('modal-open');   // the page behind stays still while a popup is open
   const f = node.querySelector('input:not([tabindex="-1"]),select,textarea,button'); if (f) f.focus({preventScroll:true});
 }
-function closeModal(){ document.getElementById('modalRoot').replaceChildren(); if (lastFocus && lastFocus.focus) lastFocus.focus({preventScroll:true}); }
+function closeModal(){ document.getElementById('modalRoot').replaceChildren(); document.documentElement.classList.remove('modal-open'); if (lastFocus && lastFocus.focus) lastFocus.focus({preventScroll:true}); }
 document.addEventListener('keydown', e => { if (e.key==='Escape') closeModal(); });
 const modal = (...kids) => el('div',{class:'modal',role:'dialog','aria-modal':'true'}, ...kids);
 function loadContact(){ try { return JSON.parse(localStorage.getItem('rp-contact')||'{}'); } catch { return {}; } }
