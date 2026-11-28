@@ -23,7 +23,7 @@ const I18N = {
     try_h:'Try Aipan right here', try_sub:'Draw with your finger or mouse. Every line is mirrored around the centre, the way Aipan patterns are built.',
     mirror:'Mirror', fine:'Fine line', thick:'Thick line', dots:'Dots', guide:'Guide', undo:'Undo', clear:'Clear', save:'Save image', share:'Share',
     try_cta:'Liked it? Learn real Aipan with us.',
-    ch_title:'Monthly challenge: your Aipan, painted for real', ch_text:'Save or share your design, then post it on Instagram with #MyPahadiAipan and tag @rangpahadi.studio. Every month Akanksha hand-paints the best design on a real plate and gifts it to its creator.', ch_sheet:'Kids at home? Download a free Aipan colouring sheet (PDF)',
+    ch_title:'Monthly challenge: your Aipan, painted for real', ch_text:'Tap “Enter the challenge” to send your design straight to us, or post it on Instagram with #MyPahadiAipan and tag @rangpahadi.studio. Every month Akanksha hand-paints the best design on a real plate and gifts it to its creator.', ch_enter:'Enter the challenge', ch_sheet:'Kids at home? Download a free Aipan colouring sheet (PDF)',
     tx_h:'Try texture art', tx_sub:'Press and pull with the palette knife. The paste rises off the canvas and catches the light, just like the real thing.', tx_cta:'Liked it? Make a real textured canvas with us.',
     knife:'Tool', petal:'Petal', leaf:'Leaf', spread:'Spread', carve:'Carve', drybrush:'Dry brush', colour:'Colour', size:'Size', canvas:'Canvas',
     sz_s:'Small', sz_m:'Medium', sz_l:'Large', base_cream:'Cream', base_charcoal:'Charcoal', base_blush:'Blush', redo:'Redo', sample:'Try a sample', tilt:'Tilt the light',
@@ -57,7 +57,7 @@ const I18N = {
     try_h:'यहीं ऐपण बनाकर देखिए', try_sub:'उँगली या माउस से बनाइए। हर रेखा बीच से चारों ओर दोहराई जाती है, जैसे ऐपण बनता है।',
     mirror:'दर्पण', fine:'पतली रेखा', thick:'मोटी रेखा', dots:'बिंदु', guide:'गाइड', undo:'वापस', clear:'साफ़ करें', save:'तस्वीर सेव करें', share:'शेयर करें',
     try_cta:'पसंद आया? हमारे साथ असली ऐपण सीखिए।',
-    ch_title:'मासिक चैलेंज: आपका ऐपण, असली प्लेट पर', ch_text:'अपना डिज़ाइन सेव या शेयर करें, फिर Instagram पर #MyPahadiAipan के साथ पोस्ट करें और @rangpahadi.studio को टैग करें। हर महीने आकांक्षा सबसे अच्छे डिज़ाइन को असली प्लेट पर हाथ से पेंट करके उसके बनाने वाले को तोहफ़े में देती हैं।', ch_sheet:'घर पर बच्चे हैं? मुफ़्त ऐपण कलरिंग शीट डाउनलोड करें (PDF)',
+    ch_title:'मासिक चैलेंज: आपका ऐपण, असली प्लेट पर', ch_enter:'चैलेंज में भेजें', ch_text:'“चैलेंज में भेजें” दबाकर अपना डिज़ाइन सीधे हमें भेजें, या Instagram पर #MyPahadiAipan के साथ पोस्ट करें और @rangpahadi.studio को टैग करें। हर महीने आकांक्षा सबसे अच्छे डिज़ाइन को असली प्लेट पर हाथ से पेंट करके उसके बनाने वाले को तोहफ़े में देती हैं।', ch_sheet:'घर पर बच्चे हैं? मुफ़्त ऐपण कलरिंग शीट डाउनलोड करें (PDF)',
     tx_h:'टेक्सचर आर्ट आज़माइए', tx_sub:'पैलेट नाइफ़ से दबाइए और खींचिए। पेस्ट कैनवास से उभरता है और रोशनी पकड़ता है, बिल्कुल असली की तरह।', tx_cta:'पसंद आया? हमारे साथ असली टेक्सचर कैनवास बनाइए।',
     knife:'औज़ार', petal:'पंखुड़ी', leaf:'पत्ती', spread:'फैलाएँ', carve:'खुरचें', drybrush:'सूखा ब्रश', colour:'रंग', size:'आकार', canvas:'कैनवास',
     sz_s:'छोटा', sz_m:'मध्यम', sz_l:'बड़ा', base_cream:'क्रीम', base_charcoal:'काला', base_blush:'गुलाबी', redo:'फिर करें', sample:'नमूना देखिए', tilt:'रोशनी घुमाइए',
@@ -1374,7 +1374,14 @@ function buildAipan(){
 
   const seg = (items, get, set) => el('div',{class:'ap-seg'}, items.map(([v,key,label]) => { const b = el('button',{type:'button','aria-pressed':get()===v,onclick:()=>{ set(v); b.parentNode.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed', x===b)); }}, key ? el('span',{'data-i18n':key},t(key)) : label); return b; }));
   async function exportBlob(){ draw(false); const blob = await new Promise(r => canvas.toBlob(r,'image/png')); draw(); return blob; }
-  const saveBtn = el('button',{type:'button',class:'btn btn-primary',onclick:async()=>{
+  // #MyPahadiAipan: send the design straight to the studio (JPEG on a cream background, at most 1200 px)
+  function designJpeg(){ draw(false); const k = Math.min(1, 1200 / canvas.width), c = document.createElement('canvas');
+    c.width = Math.round(canvas.width * k); c.height = Math.round(canvas.height * k); const x = c.getContext('2d');
+    x.fillStyle = '#fbf5ef'; x.fillRect(0, 0, c.width, c.height); x.drawImage(canvas, 0, 0, c.width, c.height); draw(); return c.toDataURL('image/jpeg', 0.88); }
+  const enterBtn = el('button',{type:'button',class:'btn btn-primary',onclick:()=>{
+    if (!AP.strokes.length) { toast(S.lang==='hi' ? 'पहले कुछ बनाइए, फिर भेजिए।' : 'Draw something first, then send it in.'); return; }
+    openAipanEntry(designJpeg()); }}, '🏆 ', el('span',{'data-i18n':'ch_enter'},t('ch_enter')));
+  const saveBtn = el('button',{type:'button',class:'btn btn-ghost',onclick:async()=>{
     const blob = await exportBlob(); const a = el('a',{href:URL.createObjectURL(blob),download:'my-aipan-rang-pahadi.png'}); document.body.append(a); a.click(); a.remove(); }}, el('span',{'data-i18n':'save'},t('save')));
   const shareBtn = (navigator.canShare && navigator.share) ? el('button',{type:'button',class:'btn btn-ghost',onclick:async()=>{
     try { const blob = await exportBlob(); const file = new File([blob],'my-aipan.png',{type:'image/png'});
@@ -1393,7 +1400,7 @@ function buildAipan(){
           el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>{AP.guide=!AP.guide;draw();}}, el('span',{'data-i18n':'guide'},t('guide'))),
           el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>{AP.strokes.pop();draw();}}, el('span',{'data-i18n':'undo'},t('undo'))),
           el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>{AP.strokes=[];draw();}}, el('span',{'data-i18n':'clear'},t('clear'))))),
-      el('div',{class:'actions',style:'justify-content:flex-start;margin-top:16px'}, saveBtn, shareBtn),
+      el('div',{class:'actions',style:'justify-content:flex-start;margin-top:16px'}, enterBtn, saveBtn, shareBtn),
       el('div',{class:'ap-challenge'},
         el('b',{'data-i18n':'ch_title'},t('ch_title')),
         el('p',{'data-i18n':'ch_text'},t('ch_text')),
@@ -1405,7 +1412,43 @@ function buildAipan(){
   return node;
 }
 
+/* The challenge entry form: name and mobile (to reach the winner), optional Instagram handle, consent to feature. */
+function openAipanEntry(design){
+  const c = loadContact(), hi = S.lang==='hi';
+  const name = el('input',{autocomplete:'name',value:c.name||''}), phone = el('input',{inputmode:'tel',autocomplete:'tel',value:c.phone||'',placeholder:'10-digit mobile'});
+  const insta = el('input',{placeholder:'@yourhandle',autocapitalize:'off',autocomplete:'off'}), hp = honeypot();
+  const ok = el('input',{type:'checkbox',checked:true}), err = el('div',{class:'err',role:'alert'});
+  [name, phone].forEach(i => i.addEventListener('input', () => { err.textContent = ''; }));   // clear the message once they fix it
+  const send = el('button',{type:'submit',class:'btn btn-primary'}, hi?'भेजें':'Send my entry');
+  const body = el('div',{class:'modal',role:'dialog','aria-modal':'true'});
+  const done = id => body.replaceChildren(el('div',{class:'apx-done'},
+    el('img',{src:design,alt:'',class:'apx-img'}), el('h2',null, hi?'एंट्री मिल गई! 🎉':'Entry received! 🎉'),
+    el('p',{class:'desc'}, hi?'महीने के आख़िर में विजेता की घोषणा हमारी Instagram स्टोरी पर होगी, और जीतने पर हम आपको संदेश करेंगे।':'We announce the winner on our Instagram Stories at the end of the month, and we’ll message you if you win.'),
+    el('p',{class:'meta'}, (hi?'रेफ़रेंस: ':'Reference: '), el('b',null,id)),
+    el('p',{class:'desc'}, hi?'चाहें तो इसे #MyPahadiAipan के साथ Instagram पर भी पोस्ट करें।':'Want to show it off? Post it on Instagram with #MyPahadiAipan too.'),
+    el('div',{class:'modal-foot'}, el('button',{type:'button',class:'btn btn-primary',onclick:closeModal}, t('close')))));
+  body.append(el('h2',null, hi?'चैलेंज में भेजें':'Enter the #MyPahadiAipan challenge'),
+    el('p',{class:'desc'}, hi?'हर महीने सबसे अच्छा डिज़ाइन आकांक्षा असली प्लेट पर हाथ से पेंट करती हैं।':'Every month Akanksha hand-paints the best design on a real plate for its creator.'),
+    el('img',{src:design,alt:hi?'आपका ऐपण':'Your Aipan',class:'apx-img'}),
+    el('form',{novalidate:true,onsubmit:async e=>{ e.preventDefault(); err.textContent='';
+      if (!validPerson(name, phone, err)) return; saveContact({name:name.value.trim(), phone:phone.value.trim()});
+      send.disabled = true; send.textContent = hi?'भेज रहे हैं…':'Sending…';
+      try { const r = await api('aipanEntry', {name:name.value.trim(), phone:phone.value.trim(), instagram:insta.value.trim(), feature:ok.checked, design, website:hp.value});
+        if (r.ok) { track('aipan_entry',{}); done(r.id); return; } err.textContent = r.message || t('err_generic'); }
+      catch { err.textContent = t('err_generic'); }
+      send.disabled = false; send.textContent = hi?'भेजें':'Send my entry'; }},
+      el('div',{class:'form'}, field(t('name'),name), field(t('mobile'),phone),
+        field(hi?'Instagram (वैकल्पिक)':'Instagram handle (optional)', insta, true),
+        el('label',{class:'full apx-ok'}, ok, ' ', hi?'आप मेरा डिज़ाइन मेरे पहले नाम के साथ Instagram पर दिखा सकते हैं':'You can show my design on Instagram with my first name'), hp), err,
+      el('p',{class:'meta',style:'margin-top:4px'}, hi?'आपका नंबर सिर्फ़ विजेता बनने पर संपर्क के लिए है।':'Your number is only used to contact you if you win.'),
+      el('div',{class:'modal-foot'}, el('button',{type:'button',class:'btn btn-ghost',onclick:closeModal}, t('cancel')), send)));
+  openModal(body);
+}
 (function(){ const st = document.createElement('style'); st.textContent = `
+.apx-img{display:block;width:180px;height:180px;object-fit:cover;border-radius:50%;margin:12px auto;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.form label.apx-ok{display:flex;flex-direction:row;gap:10px;align-items:flex-start;font-size:14px;font-weight:500;line-height:1.4;color:var(--ink)}
+.form label.apx-ok input{flex:none;width:18px;height:18px;margin:2px 0 0;padding:0;accent-color:var(--geru)}
+.apx-done{text-align:center}
 .ap-challenge{margin-top:18px;padding:14px 16px;border-radius:14px;background:color-mix(in srgb,var(--marigold,#e3a127) 16%,var(--surface));border:1px dashed color-mix(in srgb,var(--geru) 40%,transparent)}
 .ap-challenge b{display:block;color:var(--geru);font-size:15.5px}
 .ap-challenge p{margin:6px 0 10px;font-size:14px;line-height:1.5;color:var(--ink)}

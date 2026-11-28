@@ -10,7 +10,7 @@
  * edit (pencil) > Version: New version > Deploy. The web app URL stays the same.
  */
 
-const TAB = { W: 'Workshops', B: 'Bookings', S: 'Settings', O: 'Overview', V: 'Vouchers', C: 'Coupons', L: 'Waitlist', R: 'Reviews', E: 'Enquiries', A: 'Artwork', M: 'Makery', K: 'Commissions' };
+const TAB = { W: 'Workshops', B: 'Bookings', S: 'Settings', O: 'Overview', V: 'Vouchers', C: 'Coupons', L: 'Waitlist', R: 'Reviews', E: 'Enquiries', A: 'Artwork', M: 'Makery', K: 'Commissions', P: 'Aipan entries' };
 
 const HEAD = {
   Workshops: ['ID', 'Title', 'Category', 'Date', 'Start time', 'Duration (min)', 'Seats', 'Price (₹)', 'Price label', 'Level', 'Description', 'Status', 'Photo', 'Title (Hindi)', 'Description (Hindi)'],
@@ -23,6 +23,7 @@ const HEAD = {
   Artwork: ['Photo', 'Title', 'Medium', 'Size', 'Price', 'Status', 'Notes'],
   Makery: ['Project', 'Description', 'Includes', 'Price (₹)', 'Usual time (min)', 'Ages', 'Photo', 'Status'],
   Commissions: ['Created', 'Reference', 'Name', 'Phone', 'Email', 'What', 'Size', 'Budget', 'Needed by', 'Occasion', 'Idea', 'Photo', 'Status', 'Notes'],
+  AipanEntries: ['Created', 'Reference', 'Month', 'Name', 'Phone', 'Instagram', 'OK to feature', 'Design', 'Winner', 'Notes'],
 };
 const MAKERY_STARTER = [   // price is per person, per project, materials included
   ['Paint a mini canvas', 'A mountain sunset in acrylics, guided step by step.', '6×6 inch canvas, acrylic colours, brushes, palette, apron', 449, 60, '5+', '', 'Available'],
@@ -84,6 +85,7 @@ function doPost(e) {
     if (act === 'review') return json_(review_(d));
     if (act === 'enquiry') return json_(enquiry_(d));
     if (act === 'commission') return json_(commission_(d));
+    if (act === 'aipanEntry') return json_(aipanEntry_(d));
     return json_({ ok: false, error: 'unknown_action' });
   } catch (err) {
     return json_({ ok: false, error: 'server', message: 'Something went wrong. Please try again or message us on WhatsApp.' });
@@ -244,17 +246,7 @@ function commission_(d) {
   if (phone.replace(/\D/g, '').length < 10) return { ok: false, error: 'phone', message: 'Please add a 10-digit mobile number.' };
   const idea = clean_(d.idea, 1200);
   const ref = 'CM-' + Utilities.getUuid().replace(/-/g, '').slice(0, 6).toUpperCase();
-  let photoLink = '';
-  const m = String(d.photo || '').match(/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+\/=]+)$/);
-  if (m && m[2].length < 7e6) {                       // ~5 MB at most; the website already shrinks photos to ~300 KB
-    try {
-      const props = PropertiesService.getScriptProperties();
-      let folder; try { folder = DriveApp.getFolderById(props.getProperty('commissionFolder')); } catch (e) {}
-      if (!folder) { folder = DriveApp.createFolder('Rang Pahadi: commission photos'); props.setProperty('commissionFolder', folder.getId()); }
-      const blob = Utilities.newBlob(Utilities.base64Decode(m[2]), 'image/' + m[1], ref + '.' + (m[1] === 'jpeg' ? 'jpg' : m[1]));
-      photoLink = folder.createFile(blob).getUrl();     // private: only you can open it
-    } catch (e) { photoLink = '(photo could not be saved)'; }
-  }
+  const photoLink = savePhoto_(d.photo, 'commissionFolder', 'Rang Pahadi: commission photos', ref);
   const sh = ensure_(SpreadsheetApp.getActive(), TAB.K, HEAD.Commissions);
   appendByHeader_(sh, { 'Created': new Date(), 'Reference': ref, 'Name': name, 'Phone': "'" + phone, 'Email': email_(d.email),
     'What': clean_(d.what, 80), 'Size': clean_(d.size, 80), 'Budget': clean_(d.budget, 80), 'Needed by': clean_(d.by, 20),
@@ -263,6 +255,40 @@ function commission_(d) {
     `${name} (${phone}${email_(d.email) ? ', ' + email_(d.email) : ''}) would like: ${clean_(d.what, 80) || '-'}\n` +
     `Size: ${clean_(d.size, 80) || '-'} · Budget: ${clean_(d.budget, 80) || '-'} · Needed by: ${clean_(d.by, 20) || '-'}\n` +
     `Occasion: ${clean_(d.occasion, 120) || '-'}\nIdea: ${idea || '-'}${photoLink ? '\nReference photo: ' + photoLink : ''}\n\nReply within 2 days with a price and timeline.`);
+  return { ok: true, id: ref };
+}
+
+/* Saves an image sent from the website (a data: URL) as a private file in a Drive folder of yours, and
+ * returns its link. Only JPEG, PNG or WebP up to ~5 MB; anything else is ignored (returns ''). */
+function savePhoto_(dataUrl, folderProp, folderName, base) {
+  const m = String(dataUrl || '').match(/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+\/=]+)$/);
+  if (!m || m[2].length >= 7e6) return '';
+  try {
+    const props = PropertiesService.getScriptProperties();
+    let folder; try { folder = DriveApp.getFolderById(props.getProperty(folderProp)); } catch (e) {}
+    if (!folder) { folder = DriveApp.createFolder(folderName); props.setProperty(folderProp, folder.getId()); }
+    const blob = Utilities.newBlob(Utilities.base64Decode(m[2]), 'image/' + m[1], base + '.' + (m[1] === 'jpeg' ? 'jpg' : m[1]));
+    return folder.createFile(blob).getUrl();            // private: only you can open it
+  } catch (e) { return '(image could not be saved)'; }
+}
+
+/* #MyPahadiAipan monthly challenge: a design drawn in the website's Aipan tool, sent straight to the studio.
+ * Saved in the "Aipan entries" tab (created on first use) with the design in a private Drive folder. */
+function aipanEntry_(d) {
+  const name = clean_(d.name, 80), phone = phone_(d.phone);
+  if (!name) return { ok: false, error: 'missing', message: 'Please add your name.' };
+  if (phone.replace(/\D/g, '').length < 10) return { ok: false, error: 'phone', message: 'Please add a 10-digit mobile number, so we can reach you if you win.' };
+  if (!/^data:image\//.test(String(d.design || ''))) return { ok: false, error: 'design', message: 'Your design could not be attached. Please try again.' };
+  const ref = 'AP-' + Utilities.getUuid().replace(/-/g, '').slice(0, 6).toUpperCase();
+  const link = savePhoto_(d.design, 'aipanFolder', 'Rang Pahadi: Aipan challenge entries', ref);
+  if (!link || link.charAt(0) === '(') return { ok: false, error: 'design', message: 'Your design could not be saved. Please try again in a minute.' };
+  let insta = clean_(d.instagram, 40).replace(/[^\w.@]/g, ''); if (insta && insta.charAt(0) !== '@') insta = '@' + insta;
+  const month = Utilities.formatDate(new Date(), 'Asia/Kolkata', 'yyyy-MM');
+  const sh = ensure_(SpreadsheetApp.getActive(), TAB.P, HEAD.AipanEntries);
+  appendByHeader_(sh, { 'Created': new Date(), 'Reference': ref, 'Month': month, 'Name': name, 'Phone': "'" + phone, 'Instagram': insta,
+    'OK to feature': d.feature === true ? 'Yes' : 'No', 'Design': link, 'Winner': '' });
+  notifyOwner_(readSettings_(), `New #MyPahadiAipan entry ${ref} from ${name}`,
+    `${name} (${phone}${insta ? ', ' + insta : ''}) sent an Aipan design for the ${month} challenge.\nOK to feature on Instagram: ${d.feature === true ? 'Yes' : 'No'}\nDesign: ${link}`);
   return { ok: true, id: ref };
 }
 
