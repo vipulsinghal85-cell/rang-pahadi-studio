@@ -23,7 +23,7 @@ const HEAD = {
   Artwork: ['Photo', 'Title', 'Medium', 'Size', 'Price', 'Status', 'Notes'],
   Makery: ['Project', 'Description', 'Includes', 'Price (₹)', 'Usual time (min)', 'Ages', 'Photo', 'Status'],
   Commissions: ['Created', 'Reference', 'Name', 'Phone', 'Email', 'What', 'Size', 'Budget', 'Needed by', 'Occasion', 'Idea', 'Photo', 'Status', 'Notes'],
-  AipanEntries: ['Created', 'Reference', 'Month', 'Name', 'Phone', 'Instagram', 'OK to feature', 'Design', 'Winner', 'Notes'],
+  AipanEntries: ['Created', 'Reference', 'Month', 'Name', 'Phone', 'Instagram', 'OK to feature', 'Adult or guardian', 'Design', 'Winner', 'Notes'],
 };
 const MAKERY_STARTER = [   // price is per person, per project, materials included
   ['Paint a mini canvas', 'A mountain sunset in acrylics, guided step by step.', '6×6 inch canvas, acrylic colours, brushes, palette, apron', 449, 60, '5+', '', 'Available'],
@@ -352,6 +352,7 @@ function aipanEntry_(d) {
   const name = clean_(d.name, 80), phone = phone_(d.phone);
   if (!name) return { ok: false, error: 'missing', message: 'Please add your name.' };
   if (phone.replace(/\D/g, '').length < 10) return { ok: false, error: 'phone', message: 'Please add a 10-digit mobile number, so we can reach you if you win.' };
+  if (d.adult !== true) return { ok: false, error: 'adult', message: 'Please confirm you are 18 or over, or a parent or guardian sending this for a child.' };   // DPDP Act: children's data needs a parent
   if (!/^data:image\//.test(String(d.design || ''))) return { ok: false, error: 'design', message: 'Your design could not be attached. Please try again.' };
   const ref = 'AP-' + Utilities.getUuid().replace(/-/g, '').slice(0, 6).toUpperCase();
   const link = savePhoto_(d.design, 'aipanFolder', 'Rang Pahadi: Aipan challenge entries', ref);
@@ -360,7 +361,7 @@ function aipanEntry_(d) {
   const month = Utilities.formatDate(new Date(), 'Asia/Kolkata', 'yyyy-MM');
   const sh = ensure_(SpreadsheetApp.getActive(), TAB.P, HEAD.AipanEntries);
   appendByHeader_(sh, { 'Created': new Date(), 'Reference': ref, 'Month': month, 'Name': name, 'Phone': "'" + phone, 'Instagram': insta,
-    'OK to feature': d.feature === true ? 'Yes' : 'No', 'Design': link, 'Winner': '' });
+    'OK to feature': d.feature === true ? 'Yes' : 'No', 'Adult or guardian': 'Yes', 'Design': link, 'Winner': '' });
   notifyOwner_(readSettings_(), `New #MyPahadiAipan entry ${ref} from ${name}`,
     `${name} (${phone}${insta ? ', ' + insta : ''}) sent an Aipan design for the ${month} challenge.\nOK to feature on Instagram: ${d.feature === true ? 'Yes' : 'No'}\nDesign: ${link}`);
   return { ok: true, id: ref };

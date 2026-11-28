@@ -160,7 +160,29 @@ function copyChip(text){
   const b = el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:e=>copyText(text,e.currentTarget)},t('copy'));
   return el('span',{class:'copy'}, el('span',null,text), b);
 }
-function track(name, params){ try { if (typeof window.gtag === 'function') window.gtag('event', name, params || {}); } catch {} }
+function track(name, params){ try { if (analyticsOK() && typeof window.gtag === 'function') window.gtag('event', name, params || {}); } catch {} }
+/* Google Analytics runs only if the visitor agrees (India's DPDP Act: consent before processing). The choice is
+ * remembered on this device and can be changed from "Privacy choices" in the footer. */
+const GA_ID = 'G-6FSL5QQVD8';
+function analyticsChoice(){ try { return localStorage.getItem('rp-analytics') || ''; } catch { return ''; } }
+function analyticsOK(){ return analyticsChoice() === 'yes'; }
+function loadGA(){ if (window.__gaLoaded) return; window.__gaLoaded = true;
+  window.dataLayer = window.dataLayer || []; window.gtag = window.gtag || function(){ dataLayer.push(arguments); };
+  const s = document.createElement('script'); s.async = true; s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID; document.head.appendChild(s);
+  gtag('js', new Date()); gtag('config', GA_ID); }
+function consentBanner(force){
+  const prev = document.getElementById('rp-consent'); if (prev) prev.remove();
+  if (!force && analyticsChoice()) return;
+  const hi = S.lang==='hi', set = v => { try { localStorage.setItem('rp-analytics', v); } catch {} box.remove(); if (v === 'yes') loadGA(); else if (window.__gaLoaded) location.reload(); };
+  const box = el('div',{id:'rp-consent',role:'dialog','aria-label':hi?'गोपनीयता विकल्प':'Privacy choices'},
+    el('p',null, hi ? 'हम Google Analytics (कुकीज़) से यह समझना चाहते हैं कि लोग वेबसाइट कैसे इस्तेमाल करते हैं। कोई विज्ञापन नहीं, कोई डेटा बिक्री नहीं। ' : 'May we use Google Analytics (cookies) to understand how people use this website? No ads, and we never sell data. ',
+      el('a',{href:'privacy.html'}, hi?'गोपनीयता नीति':'Privacy policy')),
+    el('div',{class:'rp-consent-btns'},
+      el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>set('no')}, hi?'नहीं, धन्यवाद':'No thanks'),
+      el('button',{type:'button',class:'btn btn-primary btn-sm',onclick:()=>set('yes')}, hi?'ठीक है':'Allow')));
+  document.body.append(box);
+}
+if (analyticsOK()) loadGA();
 const TRACK_NAMES = {book:'booking', waitlist:'waitlist_join', voucher:'voucher_order', review:'review_sent', enquiry:'group_enquiry', commission:'custom_art_request'};
 /* Anonymous counts for the owner's daily summary email: one visit per browser session, and the first time
  * someone draws in the Aipan or texture tool. No personal data. Only on the real site, and never for the
@@ -359,6 +381,11 @@ function render(){
       el('span',null, `© ${new Date().getFullYear()} ${studioName()} · ${st.city||'Dehradun, Uttarakhand'}`),
       igUrl() ? el('a',{class:'footer-ig',href:igUrl(),target:'_blank',rel:'noopener'}, igIcon(), ' ', igHandle()) : null,
       fbUrl() ? el('a',{class:'footer-ig',href:fbUrl(),target:'_blank',rel:'noopener','aria-label':'Facebook'}, fbIcon(), ' Facebook') : null,
+      el('span',{class:'footer-legal'},
+        el('a',{href:'privacy.html'}, S.lang==='hi'?'गोपनीयता नीति':'Privacy policy'), ' · ',
+        el('a',{href:'terms.html'}, S.lang==='hi'?'शर्तें और रिफ़ंड':'Terms & refunds'), ' · ',
+        el('a',{href:'privacy.html#grievance'}, S.lang==='hi'?'शिकायत अधिकारी':'Grievance officer'), ' · ',
+        el('button',{type:'button',class:'linklike',onclick:()=>consentBanner(true)}, S.lang==='hi'?'गोपनीयता विकल्प':'Privacy choices')),
       S.updated ? el('span',{class:'updated'}, 'Calendar updated '+new Date(S.updated).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'numeric',minute:'2-digit'})) : null))
   ].filter(Boolean));
   lockHeroText();
@@ -1422,12 +1449,22 @@ function buildAipan(){
   return node;
 }
 
+(function(){ const st = document.createElement('style'); st.textContent = `
+#rp-consent{position:fixed;z-index:60;left:16px;bottom:16px;max-width:420px;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:14px 16px;box-shadow:0 12px 34px rgba(0,0,0,.18)}
+#rp-consent p{margin:0 0 10px;font-size:14px;line-height:1.5}
+.rp-consent-btns{display:flex;gap:8px;justify-content:flex-end}
+@media (max-width:520px){#rp-consent{left:10px;right:10px;bottom:10px;max-width:none}}
+.privacy-note{font-size:12.5px;color:var(--muted);margin:8px 0 0;line-height:1.45}
+.footer-legal{font-size:13px}.footer-legal a{color:inherit}
+.linklike{background:none;border:0;padding:0;font:inherit;color:inherit;text-decoration:underline;cursor:pointer}
+`; document.head.appendChild(st); })();
+
 /* The challenge entry form: name and mobile (to reach the winner), optional Instagram handle, consent to feature. */
 function openAipanEntry(design){
   const c = loadContact(), hi = S.lang==='hi';
   const name = el('input',{autocomplete:'name',value:c.name||''}), phone = el('input',{inputmode:'tel',autocomplete:'tel',value:c.phone||'',placeholder:'10-digit mobile'});
   const insta = el('input',{placeholder:'@yourhandle',autocapitalize:'off',autocomplete:'off'}), hp = honeypot();
-  const ok = el('input',{type:'checkbox',checked:true}), err = el('div',{class:'err',role:'alert'});
+  const ok = el('input',{type:'checkbox'}), adult = el('input',{type:'checkbox'}), err = el('div',{class:'err',role:'alert'});   // consent boxes start unticked
   [name, phone].forEach(i => i.addEventListener('input', () => { err.textContent = ''; }));   // clear the message once they fix it
   const send = el('button',{type:'submit',class:'btn btn-primary'}, hi?'भेजें':'Send my entry');
   const body = el('div',{class:'modal',role:'dialog','aria-modal':'true'});
@@ -1441,15 +1478,18 @@ function openAipanEntry(design){
     el('p',{class:'desc'}, hi?'हर महीने सबसे अच्छा डिज़ाइन आकांक्षा असली प्लेट पर हाथ से पेंट करती हैं।':'Every month Akanksha hand-paints the best design on a real plate for its creator.'),
     el('img',{src:design,alt:hi?'आपका ऐपण':'Your Aipan',class:'apx-img'}),
     el('form',{novalidate:true,onsubmit:async e=>{ e.preventDefault(); err.textContent='';
-      if (!validPerson(name, phone, err)) return; saveContact({name:name.value.trim(), phone:phone.value.trim()});
+      if (!validPerson(name, phone, err)) return;
+      if (!adult.checked) { err.textContent = hi?'कृपया पुष्टि करें कि आप 18+ हैं या माता-पिता/अभिभावक हैं।':'Please confirm you are 18 or over, or a parent or guardian sending this for a child.'; return; }
+      saveContact({name:name.value.trim(), phone:phone.value.trim()});
       send.disabled = true; send.textContent = hi?'भेज रहे हैं…':'Sending…';
-      try { const r = await api('aipanEntry', {name:name.value.trim(), phone:phone.value.trim(), instagram:insta.value.trim(), feature:ok.checked, design, website:hp.value});
+      try { const r = await api('aipanEntry', {name:name.value.trim(), phone:phone.value.trim(), instagram:insta.value.trim(), feature:ok.checked, adult:adult.checked, design, website:hp.value});
         if (r.ok) { track('aipan_entry',{}); done(r.id); return; } err.textContent = r.message || t('err_generic'); }
       catch { err.textContent = t('err_generic'); }
       send.disabled = false; send.textContent = hi?'भेजें':'Send my entry'; }},
       el('div',{class:'form'}, field(t('name'),name), field(t('mobile'),phone),
         field(hi?'Instagram (वैकल्पिक)':'Instagram handle (optional)', insta, true),
-        el('label',{class:'full apx-ok'}, ok, ' ', hi?'आप मेरा डिज़ाइन मेरे पहले नाम के साथ Instagram पर दिखा सकते हैं':'You can show my design on Instagram with my first name'), hp), err,
+        el('label',{class:'full apx-ok'}, adult, ' ', hi?'मैं 18 साल या उससे बड़ा/बड़ी हूँ, या बच्चे की ओर से भेजने वाला माता-पिता/अभिभावक हूँ':'I am 18 or over, or I’m a parent or guardian sending this for my child'),
+        el('label',{class:'full apx-ok'}, ok, ' ', hi?'(वैकल्पिक) आप मेरा डिज़ाइन मेरे पहले नाम के साथ Instagram पर दिखा सकते हैं':'(Optional) You can show this design on Instagram with the artist’s first name'), hp), err,
       el('p',{class:'meta',style:'margin-top:4px'}, hi?'आपका नंबर सिर्फ़ विजेता बनने पर संपर्क के लिए है।':'Your number is only used to contact you if you win.'),
       el('div',{class:'modal-foot'}, el('button',{type:'button',class:'btn btn-ghost',onclick:closeModal}, t('cancel')), send)));
   openModal(body);
@@ -1715,6 +1755,10 @@ let lastFocus = null;
 function openModal(node, size){
   lastFocus = document.activeElement;
   const ov = el('div',{class:'overlay'+(size?' '+size:''),onclick:e=>{ if(e.target===ov) closeModal(); }}, node);
+  const form = node.querySelector('form'), foot = form && form.querySelector('.modal-foot');
+  if (foot && !form.querySelector('.privacy-note')) form.insertBefore(el('p',{class:'privacy-note'},
+    S.lang==='hi' ? 'आपकी जानकारी सिर्फ़ इसी अनुरोध के लिए इस्तेमाल होती है। ' : 'We use these details only for this request and never share them. ',
+    el('a',{href:'privacy.html',target:'_blank',rel:'noopener'}, S.lang==='hi'?'गोपनीयता नीति':'Privacy policy')), foot);
   document.getElementById('modalRoot').replaceChildren(ov);
   document.documentElement.classList.add('modal-open');   // the page behind stays still while a popup is open
   const f = node.querySelector('input:not([tabindex="-1"]),select,textarea,button'); if (f) f.focus({preventScroll:true});
@@ -2251,5 +2295,6 @@ try { const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); if (
 render();
 load();
 ping('visit');
+setTimeout(() => consentBanner(false), 1500);
 setInterval(() => { if (!document.hidden && API && !document.getElementById('modalRoot').children.length) load(); }, 120000);
 })();
