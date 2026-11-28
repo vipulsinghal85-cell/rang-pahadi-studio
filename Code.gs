@@ -70,6 +70,10 @@ function doPost(e) {
   try { d = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, error: 'bad_request' }); }
   if (d.website) return json_({ ok: true, id: 'RP-OK', amount: 0 }); // spam bot trap
   const act = String(d.action || 'book');
+  const busy = { ok: false, error: 'busy', message: 'Too many requests just now. Please try again in a few minutes, or message us on WhatsApp.' };
+  if (limited_('all', 80, 600)) return json_(busy);                                     // whole site: 80 requests per 10 minutes
+  const ph = phone_(d.phone).replace(/\D/g, '').slice(-10);
+  if (ph && act !== 'checkCode' && limited_(act + '-' + ph, act === 'book' ? 6 : 3, 3600)) return json_(busy);   // per phone number, per hour
   if (act !== 'checkCode') clearPublicCache_(); // seat counts, reviews etc. may change
   try {
     if (act === 'book') return json_(book_(d));
@@ -139,6 +143,8 @@ function checkCode_(d) {
 
 /** Looks up a coupon or gift voucher. Returns {ok, discount, label, commit()} or {ok:false, message}. */
 function evalCode_(code, amount) {
+  // Security: after 30 wrong codes in 10 minutes (from anyone), pause code checks so codes can't be guessed by brute force
+  try { if (Number(CacheService.getScriptCache().get('rl-codefail') || 0) > 30) return { ok: false, error: 'busy', message: 'Too many wrong codes were tried. Please try again in 10 minutes.' }; } catch (e) {}
   const tz = tz_(), today = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
   // Coupons
   const cs = sheet_(TAB.C), crows = readTable_(cs);
@@ -168,6 +174,7 @@ function evalCode_(code, amount) {
     return { ok: true, discount, label: `${r['Type'] || 'Voucher'} · ₹${bal} balance`,
       commit: () => vs.getRange(vi + 2, colOf_(vs, 'Balance (₹)')).setValue(bal - discount) };
   }
+  limited_('codefail', 1e9, 600);   // count wrong codes; see evalCode_'s first line
   return { ok: false, error: 'code', message: 'We couldn’t find that code. Check the spelling.' };
 }
 
@@ -195,7 +202,7 @@ function voucher_(d) {
     if (!(price >= 500 && price <= 50000)) return { ok: false, error: 'amount', message: 'Choose a voucher amount.' };
     if (!allowed.includes(price) && price % 100) return { ok: false, error: 'amount', message: 'Choose a voucher amount.' };
   }
-  const code = (kind === 'Workshop pass' ? 'PASS-' : 'GIFT-') + Utilities.getUuid().replace(/-/g, '').slice(0, 5).toUpperCase();
+  const code = (kind === 'Workshop pass' ? 'PASS-' : 'GIFT-') + Utilities.getUuid().replace(/-/g, '').slice(0, 8).toUpperCase();   // 8 characters: about 4 billion combinations
   const sh = sheet_(TAB.V);
   appendByHeader_(sh, { 'Code': code, 'Created': new Date(), 'Type': kind, 'Price (₹)': price, 'Value (₹)': value, 'Balance (₹)': value,
     'Buyer': name, 'Buyer phone': "'" + phone, 'Buyer email': email, 'For': clean_(d.forName, 80), 'Message': clean_(d.message, 300), 'Paid': false, 'Status': 'Awaiting payment' });
@@ -449,7 +456,21 @@ function colOf_(sh, name) {
 
 function appendByHeader_(sh, obj) {
   const head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(h => String(h).trim());
-  sh.appendRow(head.map(h => (h in obj ? obj[h] : '')));
+  sh.appendRow(head.map(h => (h in obj ? safeCell_(obj[h]) : '')));
+}
+/* Security: text typed on the website must never become a spreadsheet formula. A value starting with
+ * = + - @ (e.g. a "name" of =IMPORTXML(...)) would run as a formula and could send Sheet data elsewhere,
+ * so it is stored as plain text with a leading apostrophe. Values we already mark with ' are left as they are. */
+function safeCell_(v) { return (typeof v === 'string' && /^[=+\-@\t\r]/.test(v)) ? "'" + v : v; }
+
+/* Security: simple rate limits so a bot can't flood bookings, enquiries or emails, or guess voucher codes.
+ * Counts live in the script cache and expire on their own. Returns true when the limit is passed. */
+function limited_(key, max, secs) {
+  try {
+    const cache = CacheService.getScriptCache(), k = 'rl-' + key, n = Number(cache.get(k) || 0) + 1;
+    cache.put(k, String(n), secs);
+    return n > max;
+  } catch (e) { return false; }
 }
 
 function fmtDate_(v, tz) {
