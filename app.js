@@ -117,6 +117,7 @@ function el(tag, attrs, ...kids){
     if (k === 'class') n.className = v;
     else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
     else if (k === 'html') n.innerHTML = v;
+    else if ((k === 'href' || k === 'src') && /^\s*(javascript|vbscript|data:text)/i.test(String(v))) continue;   // security: a link from the Sheet can never run code
     else n.setAttribute(k, v === true ? (k.startsWith('aria-') ? 'true' : '') : v);
   }
   for (const k of kids.flat()){ if (k == null || k === false) continue; n.append(k.nodeType ? k : document.createTextNode(String(k))); }
