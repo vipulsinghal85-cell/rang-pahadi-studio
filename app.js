@@ -162,6 +162,16 @@ function copyChip(text){
 }
 function track(name, params){ try { if (typeof window.gtag === 'function') window.gtag('event', name, params || {}); } catch {} }
 const TRACK_NAMES = {book:'booking', waitlist:'waitlist_join', voucher:'voucher_order', review:'review_sent', enquiry:'group_enquiry', commission:'custom_art_request'};
+/* Anonymous counts for the owner's daily summary email: one visit per browser session, and the first time
+ * someone draws in the Aipan or texture tool. No personal data. Only on the real site, and never for the
+ * owner (open rangpahadistudio.in/?me=1 once on your own phones and laptop to stop counting yourself). */
+function ping(kind){
+  try { if (new URLSearchParams(location.search).has('me')) localStorage.setItem('rp-owner', '1'); if (localStorage.getItem('rp-owner')) return; } catch {}
+  if (!API || !/(^|\.)rangpahadistudio\.(in|com)$/.test(location.hostname)) return;
+  try { const k = 'rp-ping-' + kind; if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch {}
+  if (kind !== 'visit') track('try_' + kind, {});   // Google Analytics too, once per session
+  try { fetch(API, {method:'POST', mode:'no-cors', keepalive:true, headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'ping', kind})}); } catch {}
+}
 async function api(action, data){
   const res = await fetch(API, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action, ...data})});
   const out = await res.json();
@@ -1369,7 +1379,7 @@ function buildAipan(){
   const pos = e => { const r = canvas.getBoundingClientRect(); return [(e.clientX-r.left)*W/r.width, (e.clientY-r.top)*W/r.height]; };
   canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); AP.cur = {pts:[pos(e)], sym:AP.sym, brush:AP.brush}; draw(); e.preventDefault(); });
   canvas.addEventListener('pointermove', e => { if (!AP.cur) return; AP.cur.pts.push(pos(e)); draw(); });
-  const end = () => { if (AP.cur){ AP.strokes.push(AP.cur); AP.cur = null; draw(); } };
+  const end = () => { if (AP.cur){ AP.strokes.push(AP.cur); AP.cur = null; draw(); ping('aipan'); } };
   canvas.addEventListener('pointerup', end); canvas.addEventListener('pointercancel', end);
 
   const seg = (items, get, set) => el('div',{class:'ap-seg'}, items.map(([v,key,label]) => { const b = el('button',{type:'button','aria-pressed':get()===v,onclick:()=>{ set(v); b.parentNode.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed', x===b)); }}, key ? el('span',{'data-i18n':key},t(key)) : label); return b; }));
@@ -1589,7 +1599,7 @@ function buildTexture(){
   const addDirty = b => { if (!b) return; dirty = union(dirty, b.slice());
     if (!raf) raf = requestAnimationFrame(() => { raf = 0; const d = dirty; dirty = null; if (d) shade(...d); }); };
   const pos = e => { const r = canvas.getBoundingClientRect(); return [(e.clientX-r.left)*W/r.width, (e.clientY-r.top)*W/r.height]; };
-  const commit = s => { TX.strokes.push(s); TX.redo = []; TX.cleared = null; };
+  const commit = s => { TX.strokes.push(s); TX.redo = []; TX.cleared = null; ping('texture'); };
   canvas.addEventListener('pointerdown', e => { if (busy) return; canvas.setPointerCapture(e.pointerId); cur = { tool:TX.tool, color:TX.color, size:TX.size, seed: Math.floor(Math.random()*1000), pts:[] }; run = runner(cur); const p = pos(e); cur.pts.push(p); addDirty(run(p)); e.preventDefault(); });
   canvas.addEventListener('pointermove', e => { if (!cur) return; for (const ev of (e.getCoalescedEvents ? e.getCoalescedEvents() : [e])){ const p = pos(ev); cur.pts.push(p); addDirty(run(p)); } });
   const end = () => { if (cur){ addDirty(run.finish()); commit(cur); cur = null; run = null; } };
@@ -2240,5 +2250,6 @@ document.getElementById('langBtn')?.addEventListener('click', () => { S.lang = S
 try { const cached = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null'); if (API && cached && cached.ok) { apply(cached); shownData = dataKey(cached); } } catch {}
 render();
 load();
+ping('visit');
 setInterval(() => { if (!document.hidden && API && !document.getElementById('modalRoot').children.length) load(); }, 120000);
 })();

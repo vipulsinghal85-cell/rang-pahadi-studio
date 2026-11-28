@@ -65,13 +65,66 @@ function refreshPublicCache_() {
   return data;
 }
 function clearPublicCache_() { try { CacheService.getScriptCache().remove(PUBLIC_CACHE); } catch (e) {} }
-function warmCache() { refreshPublicCache_(); }
+function warmCache() { refreshPublicCache_(); try { maybeDailyDigest_(); } catch (e) {} }
+
+/* ============================================ daily summary email
+ * The website sends an anonymous "ping" once per visit, and once when someone first draws in the Aipan
+ * or texture tool (no names, numbers or other personal data). Counts are kept per day (India time).
+ * Every morning after 8 AM, warmCache (which already runs every 5 minutes) emails a summary of the
+ * previous day to notifyEmail, once. No extra trigger to set up. */
+function ping_(d) {
+  const kind = ({ visit: 'visit', aipan: 'aipan', texture: 'texture' })[String(d.kind)];
+  if (!kind || limited_('ping', 600, 600)) return { ok: true };
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(3000)) return { ok: true };
+  try {
+    const props = PropertiesService.getScriptProperties(), key = 'stats-' + Utilities.formatDate(new Date(), 'Asia/Kolkata', 'yyyy-MM-dd');
+    const s = JSON.parse(props.getProperty(key) || '{}'); s[kind] = (s[kind] || 0) + 1; props.setProperty(key, JSON.stringify(s));
+  } finally { lock.releaseLock(); }
+  return { ok: true };
+}
+function maybeDailyDigest_() {
+  const now = new Date(), hour = Number(Utilities.formatDate(now, 'Asia/Kolkata', 'H'));
+  if (hour < 8) return;
+  const props = PropertiesService.getScriptProperties();
+  const day = Utilities.formatDate(new Date(now.getTime() - 864e5), 'Asia/Kolkata', 'yyyy-MM-dd');
+  if (props.getProperty('digestSent') === day) return;
+  props.setProperty('digestSent', day);                       // mark first, so a slow run never sends twice
+  const s = readSettings_(); if (!s.notifyEmail) return;
+  const st = JSON.parse(props.getProperty('stats-' + day) || '{}');
+  const rowsOn = name => { const sh = sheet_(name); if (!sh) return 0;
+    return readTable_(sh).filter(r => r['Created'] instanceof Date && Utilities.formatDate(r['Created'], 'Asia/Kolkata', 'yyyy-MM-dd') === day).length; };
+  const n = { bookings: rowsOn(TAB.B), entries: rowsOn(TAB.P), commissions: rowsOn(TAB.K), enquiries: rowsOn(TAB.E),
+    reviews: rowsOn(TAB.R), waitlist: rowsOn(TAB.L), vouchers: rowsOn(TAB.V) };
+  let week = { visit: 0, aipan: 0, texture: 0 };
+  for (let i = 1; i <= 7; i++) { const k = 'stats-' + Utilities.formatDate(new Date(now.getTime() - i * 864e5), 'Asia/Kolkata', 'yyyy-MM-dd');
+    const w = JSON.parse(props.getProperty(k) || '{}'); week.visit += w.visit || 0; week.aipan += w.aipan || 0; week.texture += w.texture || 0; }
+  const pretty = Utilities.formatDate(new Date(now.getTime() - 864e5), 'Asia/Kolkata', 'EEEE d MMMM');
+  const lines = [
+    `Yesterday (${pretty}) on rangpahadistudio.in`, '',
+    `Visits:                 ${st.visit || 0}`,
+    `Tried Aipan:            ${st.aipan || 0}`,
+    `Tried texture art:      ${st.texture || 0}`, '',
+    `Aipan challenge entries: ${n.entries}`,
+    `Bookings:               ${n.bookings}`,
+    `Custom artwork requests: ${n.commissions}`,
+    `Group enquiries:        ${n.enquiries}`,
+    `Waitlist sign-ups:      ${n.waitlist}`,
+    `Gift vouchers ordered:  ${n.vouchers}`,
+    `New reviews:            ${n.reviews}`, '',
+    `Last 7 days: ${week.visit} visits, ${week.aipan} tried Aipan, ${week.texture} tried texture art.`, '',
+    'Visits are counted once per browser session and are anonymous. Details of every entry, booking and request are in your Google Sheet.'];
+  try { MailApp.sendEmail(s.notifyEmail, `Rang Pahadi yesterday: ${st.visit || 0} visits, ${st.aipan || 0} tried Aipan, ${n.entries + n.bookings + n.commissions + n.enquiries} new entries`, lines.join('\n')); } catch (e) {}
+  // keep 60 days of counts
+  props.getKeys().filter(k => k.indexOf('stats-') === 0 && k.slice(6) < Utilities.formatDate(new Date(now.getTime() - 60 * 864e5), 'Asia/Kolkata', 'yyyy-MM-dd')).forEach(k => props.deleteProperty(k));
+}
 
 function doPost(e) {
   let d;
   try { d = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, error: 'bad_request' }); }
   if (d.website) return json_({ ok: true, id: 'RP-OK', amount: 0 }); // spam bot trap
   const act = String(d.action || 'book');
+  if (act === 'ping') return json_(ping_(d));   // anonymous visit counter: own limit, and never clears the public cache
   const busy = { ok: false, error: 'busy', message: 'Too many requests just now. Please try again in a few minutes, or message us on WhatsApp.' };
   if (limited_('all', 80, 600)) return json_(busy);                                     // whole site: 80 requests per 10 minutes
   const ph = phone_(d.phone).replace(/\D/g, '').slice(-10);
