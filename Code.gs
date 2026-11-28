@@ -10,7 +10,7 @@
  * edit (pencil) > Version: New version > Deploy. The web app URL stays the same.
  */
 
-const TAB = { W: 'Workshops', B: 'Bookings', S: 'Settings', O: 'Overview', V: 'Vouchers', C: 'Coupons', L: 'Waitlist', R: 'Reviews', E: 'Enquiries', A: 'Artwork', M: 'Makery' };
+const TAB = { W: 'Workshops', B: 'Bookings', S: 'Settings', O: 'Overview', V: 'Vouchers', C: 'Coupons', L: 'Waitlist', R: 'Reviews', E: 'Enquiries', A: 'Artwork', M: 'Makery', K: 'Commissions' };
 
 const HEAD = {
   Workshops: ['ID', 'Title', 'Category', 'Date', 'Start time', 'Duration (min)', 'Seats', 'Price (₹)', 'Price label', 'Level', 'Description', 'Status', 'Photo', 'Title (Hindi)', 'Description (Hindi)'],
@@ -22,6 +22,7 @@ const HEAD = {
   Enquiries: ['Created', 'Name', 'Phone', 'Email', 'Organisation', 'Type', 'People', 'Preferred date', 'Message', 'Handled'],
   Artwork: ['Photo', 'Title', 'Medium', 'Size', 'Price', 'Status', 'Notes'],
   Makery: ['Project', 'Description', 'Includes', 'Price (₹)', 'Usual time (min)', 'Ages', 'Photo', 'Status'],
+  Commissions: ['Created', 'Reference', 'Name', 'Phone', 'Email', 'What', 'Size', 'Budget', 'Needed by', 'Occasion', 'Idea', 'Photo', 'Status', 'Notes'],
 };
 const MAKERY_STARTER = [   // price is per person, per project, materials included
   ['Paint a mini canvas', 'A mountain sunset in acrylics, guided step by step.', '6×6 inch canvas, acrylic colours, brushes, palette, apron', 449, 60, '5+', '', 'Available'],
@@ -82,6 +83,7 @@ function doPost(e) {
     if (act === 'voucher') return json_(voucher_(d));
     if (act === 'review') return json_(review_(d));
     if (act === 'enquiry') return json_(enquiry_(d));
+    if (act === 'commission') return json_(commission_(d));
     return json_({ ok: false, error: 'unknown_action' });
   } catch (err) {
     return json_({ ok: false, error: 'server', message: 'Something went wrong. Please try again or message us on WhatsApp.' });
@@ -233,6 +235,36 @@ function enquiry_(d) {
 }
 
 /* =============================================================== data */
+
+/* "Paint something for me": a custom artwork request. Saved in the Commissions tab (created on first use);
+ * a reference photo, if attached, is saved privately in your Google Drive and linked from the row. */
+function commission_(d) {
+  const name = clean_(d.name, 80), phone = phone_(d.phone);
+  if (!name) return { ok: false, error: 'missing', message: 'Please add your name.' };
+  if (phone.replace(/\D/g, '').length < 10) return { ok: false, error: 'phone', message: 'Please add a 10-digit mobile number.' };
+  const idea = clean_(d.idea, 1200);
+  const ref = 'CM-' + Utilities.getUuid().replace(/-/g, '').slice(0, 6).toUpperCase();
+  let photoLink = '';
+  const m = String(d.photo || '').match(/^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+\/=]+)$/);
+  if (m && m[2].length < 7e6) {                       // ~5 MB at most; the website already shrinks photos to ~300 KB
+    try {
+      const props = PropertiesService.getScriptProperties();
+      let folder; try { folder = DriveApp.getFolderById(props.getProperty('commissionFolder')); } catch (e) {}
+      if (!folder) { folder = DriveApp.createFolder('Rang Pahadi: commission photos'); props.setProperty('commissionFolder', folder.getId()); }
+      const blob = Utilities.newBlob(Utilities.base64Decode(m[2]), 'image/' + m[1], ref + '.' + (m[1] === 'jpeg' ? 'jpg' : m[1]));
+      photoLink = folder.createFile(blob).getUrl();     // private: only you can open it
+    } catch (e) { photoLink = '(photo could not be saved)'; }
+  }
+  const sh = ensure_(SpreadsheetApp.getActive(), TAB.K, HEAD.Commissions);
+  appendByHeader_(sh, { 'Created': new Date(), 'Reference': ref, 'Name': name, 'Phone': "'" + phone, 'Email': email_(d.email),
+    'What': clean_(d.what, 80), 'Size': clean_(d.size, 80), 'Budget': clean_(d.budget, 80), 'Needed by': clean_(d.by, 20),
+    'Occasion': clean_(d.occasion, 120), 'Idea': idea, 'Photo': photoLink, 'Status': 'New' });
+  notifyOwner_(readSettings_(), `New custom artwork request ${ref} from ${name}`,
+    `${name} (${phone}${email_(d.email) ? ', ' + email_(d.email) : ''}) would like: ${clean_(d.what, 80) || '-'}\n` +
+    `Size: ${clean_(d.size, 80) || '-'} · Budget: ${clean_(d.budget, 80) || '-'} · Needed by: ${clean_(d.by, 20) || '-'}\n` +
+    `Occasion: ${clean_(d.occasion, 120) || '-'}\nIdea: ${idea || '-'}${photoLink ? '\nReference photo: ' + photoLink : ''}\n\nReply within 2 days with a price and timeline.`);
+  return { ok: true, id: ref };
+}
 
 function publicData_(withExtras) {
   const tz = tz_();
