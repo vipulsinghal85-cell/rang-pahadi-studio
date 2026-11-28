@@ -23,6 +23,7 @@ const I18N = {
     try_h:'Try Aipan right here', try_sub:'Draw with your finger or mouse. Every line is mirrored around the centre, the way Aipan patterns are built.',
     mirror:'Mirror', fine:'Fine line', thick:'Thick line', dots:'Dots', guide:'Guide', undo:'Undo', clear:'Clear', save:'Save image', share:'Share',
     try_cta:'Liked it? Learn real Aipan with us.',
+    ch_title:'Monthly challenge: your Aipan, painted for real', ch_text:'Save or share your design, then post it on Instagram with #MyPahadiAipan and tag @rangpahadi.studio. Every month Akanksha hand-paints the best design on a real plate and gifts it to its creator.', ch_sheet:'Kids at home? Download a free Aipan colouring sheet (PDF)',
     tx_h:'Try texture art', tx_sub:'Press and pull with the palette knife. The paste rises off the canvas and catches the light, just like the real thing.', tx_cta:'Liked it? Make a real textured canvas with us.',
     knife:'Tool', petal:'Petal', leaf:'Leaf', spread:'Spread', carve:'Carve', drybrush:'Dry brush', colour:'Colour', size:'Size', canvas:'Canvas',
     sz_s:'Small', sz_m:'Medium', sz_l:'Large', base_cream:'Cream', base_charcoal:'Charcoal', base_blush:'Blush', redo:'Redo', sample:'Try a sample', tilt:'Tilt the light',
@@ -56,6 +57,7 @@ const I18N = {
     try_h:'यहीं ऐपण बनाकर देखिए', try_sub:'उँगली या माउस से बनाइए। हर रेखा बीच से चारों ओर दोहराई जाती है, जैसे ऐपण बनता है।',
     mirror:'दर्पण', fine:'पतली रेखा', thick:'मोटी रेखा', dots:'बिंदु', guide:'गाइड', undo:'वापस', clear:'साफ़ करें', save:'तस्वीर सेव करें', share:'शेयर करें',
     try_cta:'पसंद आया? हमारे साथ असली ऐपण सीखिए।',
+    ch_title:'मासिक चैलेंज: आपका ऐपण, असली प्लेट पर', ch_text:'अपना डिज़ाइन सेव या शेयर करें, फिर Instagram पर #MyPahadiAipan के साथ पोस्ट करें और @rangpahadi.studio को टैग करें। हर महीने आकांक्षा सबसे अच्छे डिज़ाइन को असली प्लेट पर हाथ से पेंट करके उसके बनाने वाले को तोहफ़े में देती हैं।', ch_sheet:'घर पर बच्चे हैं? मुफ़्त ऐपण कलरिंग शीट डाउनलोड करें (PDF)',
     tx_h:'टेक्सचर आर्ट आज़माइए', tx_sub:'पैलेट नाइफ़ से दबाइए और खींचिए। पेस्ट कैनवास से उभरता है और रोशनी पकड़ता है, बिल्कुल असली की तरह।', tx_cta:'पसंद आया? हमारे साथ असली टेक्सचर कैनवास बनाइए।',
     knife:'औज़ार', petal:'पंखुड़ी', leaf:'पत्ती', spread:'फैलाएँ', carve:'खुरचें', drybrush:'सूखा ब्रश', colour:'रंग', size:'आकार', canvas:'कैनवास',
     sz_s:'छोटा', sz_m:'मध्यम', sz_l:'बड़ा', base_cream:'क्रीम', base_charcoal:'काला', base_blush:'गुलाबी', redo:'फिर करें', sample:'नमूना देखिए', tilt:'रोशनी घुमाइए',
@@ -1376,7 +1378,7 @@ function buildAipan(){
     const blob = await exportBlob(); const a = el('a',{href:URL.createObjectURL(blob),download:'my-aipan-rang-pahadi.png'}); document.body.append(a); a.click(); a.remove(); }}, el('span',{'data-i18n':'save'},t('save')));
   const shareBtn = (navigator.canShare && navigator.share) ? el('button',{type:'button',class:'btn btn-ghost',onclick:async()=>{
     try { const blob = await exportBlob(); const file = new File([blob],'my-aipan.png',{type:'image/png'});
-      if (navigator.canShare({files:[file]})) await navigator.share({files:[file], title:'My Aipan', text:`I made this Aipan on ${studioName()}'s website! ${siteUrl()}`}); } catch {} }}, el('span',{'data-i18n':'share'},t('share'))) : null;
+      if (navigator.canShare({files:[file]})) await navigator.share({files:[file], title:'My Aipan', text:`I made this Aipan on ${studioName()}'s website! #MyPahadiAipan @rangpahadi.studio ${siteUrl()}`}); } catch {} }}, el('span',{'data-i18n':'share'},t('share'))) : null;
   const tradWS = () => upcoming().find(w => w.category==='Traditional Indian art' && seatsLeft(w)>0);
 
   const node = el('section',{class:'block aipan',id:'try-aipan'},
@@ -1392,12 +1394,23 @@ function buildAipan(){
           el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>{AP.strokes.pop();draw();}}, el('span',{'data-i18n':'undo'},t('undo'))),
           el('button',{type:'button',class:'btn btn-ghost btn-sm',onclick:()=>{AP.strokes=[];draw();}}, el('span',{'data-i18n':'clear'},t('clear'))))),
       el('div',{class:'actions',style:'justify-content:flex-start;margin-top:16px'}, saveBtn, shareBtn),
+      el('div',{class:'ap-challenge'},
+        el('b',{'data-i18n':'ch_title'},t('ch_title')),
+        el('p',{'data-i18n':'ch_text'},t('ch_text')),
+        el('a',{class:'ap-sheet',href:'aipan-colouring-sheet.pdf',download:'Rang-Pahadi-Aipan-colouring-sheet.pdf',onclick:()=>track('colouring_sheet_download',{})}, '🖍️ ', el('span',{'data-i18n':'ch_sheet'},t('ch_sheet')))),
       el('p',{class:'ap-cta'}, el('span',{'data-i18n':'try_cta'},t('try_cta')),' ',
         el('button',{type:'button',class:'quiz-link',onclick:()=>{ const w = tradWS(); if (w) openBooking(w); else { S.cat='Traditional Indian art'; render(); document.getElementById('calendar').scrollIntoView({behavior:'smooth'}); } }}, el('b',null,el('span',{'data-i18n':'book'},t('book')),' →')))),
     el('div',{class:'ap-stage'}, canvas));
   draw();
   return node;
 }
+
+(function(){ const st = document.createElement('style'); st.textContent = `
+.ap-challenge{margin-top:18px;padding:14px 16px;border-radius:14px;background:color-mix(in srgb,var(--marigold,#e3a127) 16%,var(--surface));border:1px dashed color-mix(in srgb,var(--geru) 40%,transparent)}
+.ap-challenge b{display:block;color:var(--geru);font-size:15.5px}
+.ap-challenge p{margin:6px 0 10px;font-size:14px;line-height:1.5;color:var(--ink)}
+.ap-sheet{font-size:14px;font-weight:700;color:var(--geru)}
+`; document.head.appendChild(st); })();
 
 /* ================================================ Try Texture Art canvas
  * Palette-knife paste on a canvas, simulated as height: each stroke raises (or carves) the surface,
