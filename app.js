@@ -1155,8 +1155,8 @@ function aboutSection(st){
       st.artistBio ? el('p',null, st.artistBio) : null,
       st.artistQuote ? el('div',{class:'quote'}, '“'+st.artistQuote+'”') : null,
       (igUrl() || fbUrl()) ? el('div',{class:'social-btns'},
-        igUrl() ? el('a',{class:'btn btn-ghost ig-btn',href:igUrl(),target:'_blank',rel:'noopener'}, igIcon(), (S.lang==='hi'?' Instagram पर देखें ':' Follow on Instagram ')) : null,
-        fbUrl() ? el('a',{class:'btn btn-ghost ig-btn',href:fbUrl(),target:'_blank',rel:'noopener'}, fbIcon(), (S.lang==='hi'?' Facebook पर देखें ':' Facebook ')) : null) : null) : null);
+        igUrl() ? el('a',{class:'social-btn social-ig',href:igUrl(),target:'_blank',rel:'noopener','aria-label':S.lang==='hi'?'Instagram पर फ़ॉलो करें':'Follow on Instagram'}, igIcon(), el('span',null,'Instagram')) : null,
+        fbUrl() ? el('a',{class:'social-btn social-fb',href:fbUrl(),target:'_blank',rel:'noopener','aria-label':S.lang==='hi'?'Facebook पर फ़ॉलो करें':'Follow on Facebook'}, fbIcon(), el('span',null,'Facebook')) : null) : null) : null);
 }
 
 function groupsPanel(groupWA){
