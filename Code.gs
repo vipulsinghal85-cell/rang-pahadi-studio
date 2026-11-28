@@ -73,7 +73,7 @@ function warmCache() { refreshPublicCache_(); try { maybeDailyDigest_(); } catch
  * Every morning after 8 AM, warmCache (which already runs every 5 minutes) emails a summary of the
  * previous day to notifyEmail, once. No extra trigger to set up. */
 function ping_(d) {
-  const kind = ({ visit: 'visit', aipan: 'aipan', texture: 'texture' })[String(d.kind)];
+  const kind = ({ visit: 'visit', aipan: 'aipan', texture: 'texture', sheet: 'sheet' })[String(d.kind)];
   if (!kind || limited_('ping', 600, 600)) return { ok: true };
   const lock = LockService.getScriptLock();
   if (!lock.tryLock(3000)) return { ok: true };
@@ -82,6 +82,25 @@ function ping_(d) {
     const s = JSON.parse(props.getProperty(key) || '{}'); s[kind] = (s[kind] || 0) + 1; props.setProperty(key, JSON.stringify(s));
   } finally { lock.releaseLock(); }
   return { ok: true };
+}
+/* Optional: visitors' approximate cities, from Google Analytics (anonymous, city level only; no IP addresses).
+ * Needs two things in Apps Script: Services (+) → "Google Analytics Data API", and a Settings row
+ * gaPropertyId = the numeric Property ID from Google Analytics → Admin → Property details. */
+function gaCities_(s, day) {
+  if (!s.gaPropertyId) return [];
+  if (typeof AnalyticsData === 'undefined') return ['(For visitor cities: in Apps Script add Services → Google Analytics Data API.)', ''];
+  const report = (extra) => AnalyticsData.Properties.runReport(Object.assign({ dateRanges: [{ startDate: day, endDate: day }],
+    dimensions: [{ name: 'city' }], limit: 8 }, extra), 'properties/' + String(s.gaPropertyId).replace(/\D/g, ''));
+  const list = r => (r.rows || []).filter(x => x.dimensionValues[0].value !== '(not set)').map(x => `${x.dimensionValues[0].value} ${x.metricValues[0].value}`).join(', ');
+  try {
+    const visits = list(report({ metrics: [{ name: 'activeUsers' }], orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }] }));
+    const sheets = list(report({ metrics: [{ name: 'eventCount' }], orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
+      dimensionFilter: { filter: { fieldName: 'eventName', stringFilter: { value: 'colouring_sheet_download' } } } }));
+    const tries = list(report({ metrics: [{ name: 'eventCount' }], orderBys: [{ metric: { metricName: 'eventCount' }, desc: true }],
+      dimensionFilter: { orGroup: { expressions: ['try_aipan', 'try_texture'].map(v => ({ filter: { fieldName: 'eventName', stringFilter: { value: v } } })) } } }));
+    return ['Where visitors came from (Google Analytics, approximate city):',
+      `  Visitors: ${visits || 'no city data yet'}`, `  Tried Aipan or texture: ${tries || '-'}`, `  Colouring sheet downloads: ${sheets || '-'}`, ''];
+  } catch (e) { return ['(Could not read Google Analytics: ' + String(e.message || e).slice(0, 120) + ')', '']; }
 }
 function maybeDailyDigest_() {
   const now = new Date(), hour = Number(Utilities.formatDate(now, 'Asia/Kolkata', 'H'));
@@ -104,7 +123,8 @@ function maybeDailyDigest_() {
     `Yesterday (${pretty}) on rangpahadistudio.in`, '',
     `Visits:                 ${st.visit || 0}`,
     `Tried Aipan:            ${st.aipan || 0}`,
-    `Tried texture art:      ${st.texture || 0}`, '',
+    `Tried texture art:      ${st.texture || 0}`,
+    `Colouring sheet downloads: ${st.sheet || 0}`, '',
     `Aipan challenge entries: ${n.entries}`,
     `Bookings:               ${n.bookings}`,
     `Custom artwork requests: ${n.commissions}`,
@@ -113,6 +133,7 @@ function maybeDailyDigest_() {
     `Gift vouchers ordered:  ${n.vouchers}`,
     `New reviews:            ${n.reviews}`, '',
     `Last 7 days: ${week.visit} visits, ${week.aipan} tried Aipan, ${week.texture} tried texture art.`, '',
+    ...gaCities_(s, day),
     'Visits are counted once per browser session and are anonymous. Details of every entry, booking and request are in your Google Sheet.'];
   try { MailApp.sendEmail(s.notifyEmail, `Rang Pahadi yesterday: ${st.visit || 0} visits, ${st.aipan || 0} tried Aipan, ${n.entries + n.bookings + n.commissions + n.enquiries} new entries`, lines.join('\n')); } catch (e) {}
   // keep 60 days of counts
@@ -693,6 +714,7 @@ function setup() {
     ['instagram', '', 'Your Instagram handle (e.g. rangpahadi) or profile link'],
     ['makeryHours', '', 'The Makery (walk-in making, one price per project): open hours, e.g. "Sat & Sun, 11 AM – 6 PM". Leave empty to show "Opening soon".'],
     ['makeryPlace', '', 'Optional: where the Makery runs, if not the studio address (e.g. a partner café)'],
+    ['gaPropertyId', '', 'Optional, private: Google Analytics numeric Property ID (Admin → Property details), for visitor cities in the daily email'],
     ['artworkFolderId', '', 'Link of a Google Drive folder with YOUR artwork (the Gallery section). Titles, sizes and prices come from the Artwork tab; a photo with no row there uses its Drive description, e.g. "Monsoon Aipan · Acrylic on canvas · ₹4,500"'],
   ];
   const have = new Set(s.getLastRow() > 1 ? s.getRange(2, 1, s.getLastRow() - 1, 1).getValues().map(r => String(r[0]).trim()) : []);
