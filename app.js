@@ -1414,7 +1414,7 @@ function buildAipan(){
       el('div',{class:'ap-challenge'},
         el('b',{'data-i18n':'ch_title'},t('ch_title')),
         el('p',{'data-i18n':'ch_text'},t('ch_text')),
-        el('a',{class:'ap-sheet',href:'aipan-colouring-sheet.pdf',download:'Rang-Pahadi-Aipan-colouring-sheet.pdf',onclick:()=>track('colouring_sheet_download',{})}, '🖍️ ', el('span',{'data-i18n':'ch_sheet'},t('ch_sheet')))),
+        el('a',{class:'ap-sheet',href:'aipan-colouring-sheet.pdf',download:'Rang-Pahadi-Aipan-colouring-sheet.pdf',onclick:()=>{ track('colouring_sheet_download',{}); ping('sheet'); }}, '🖍️ ', el('span',{'data-i18n':'ch_sheet'},t('ch_sheet')))),
       el('p',{class:'ap-cta'}, el('span',{'data-i18n':'try_cta'},t('try_cta')),' ',
         el('button',{type:'button',class:'quiz-link',onclick:()=>{ const w = tradWS(); if (w) openBooking(w); else { S.cat='Traditional Indian art'; render(); document.getElementById('calendar').scrollIntoView({behavior:'smooth'}); } }}, el('b',null,el('span',{'data-i18n':'book'},t('book')),' →')))),
     el('div',{class:'ap-stage'}, canvas));
